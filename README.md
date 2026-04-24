@@ -28,6 +28,15 @@ that does its own bookkeeping.
 > push to `main` produces a deterministically-versioned APK; see
 > [`documentations/RELEASE.md`](documentations/RELEASE.md).
 
+## Links
+
+| | |
+|---|---|
+| **Source code** | <https://github.com/D1ZZY4/NagramXF-Extera> |
+| **Official channel** | [@NagramExteraOfficial](https://t.me/NagramExteraOfficial) — announcements & changelog |
+| **Release channel** | [@NagramExteraCloud](https://t.me/NagramExteraCloud) — alternative APK distribution outside of GitHub Releases |
+| **Community group** | [@NagramExteraCommunity](https://t.me/NagramExteraCommunity) — discussion, support, bug reports |
+
 ## Highlights
 
 | | |
@@ -114,6 +123,18 @@ ecosystem. Without these projects there would be nothing to distil:
 
 A more granular breakdown lives in
 [`documentations/CREDITS.md`](documentations/CREDITS.md).
+
+## Community
+
+- **Announcements & changelog —** [@NagramExteraOfficial](https://t.me/NagramExteraOfficial)
+- **Builds (alternative to GitHub Releases) —** [@NagramExteraCloud](https://t.me/NagramExteraCloud)
+- **Discussion, support, bug reports —** [@NagramExteraCommunity](https://t.me/NagramExteraCommunity)
+- **Source code & issues —** <https://github.com/D1ZZY4/NagramXF-Extera>
+
+For sensitive reports (security advisories) please follow the private
+disclosure process documented in
+[`documentations/SECURITY.md`](documentations/SECURITY.md) instead of the
+public group.
 
 ## License
 

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # ---------------------------------------------------------------------------
 # Nagram Extera — Release pipeline
 # ---------------------------------------------------------------------------
@@ -75,7 +76,7 @@ jobs:
     name: Gradle Build (release)
     if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 45
 
     outputs:
       build_timestamp: ${{ steps.meta.outputs.build_timestamp }}
@@ -383,3 +384,7 @@ jobs:
             -F chat_id="${TG_CHAT_ID}" \
             -F caption="$(cat caption.txt)" \
             -F document=@"${ARCHIVE}"
+=======
+
+>>>>>>> 27c878cedbbe8958dd0fa1b388588ebcb38fd051
+
