@@ -206,7 +206,8 @@ jobs:
       # ---- Build ----------------------------------------------------------
       # Skip lint and tests in the release pipeline; they belong in PR CI.
       # `--build-cache` reuses outputs from previous successful runs.
-      - name: Assemble release APK
+      - id: assemble
+        name: Assemble release APK
         env:
           LOCAL_PROPERTIES: ${{ secrets.LOCAL_PROPERTIES }}
           COMMIT_ID: ${{ github.sha }}
@@ -227,6 +228,8 @@ jobs:
           APK_DIR=$(dirname "$APK_PATH")
           echo "APK=$APK_DIR"             >> "$GITHUB_ENV"
           echo "APK_FILE=$APK_PATH"       >> "$GITHUB_ENV"
+          echo "apk=$APK_DIR"             >> "$GITHUB_OUTPUT"
+          echo "apk_file=$APK_PATH"       >> "$GITHUB_OUTPUT"
           echo "Built: $APK_PATH ($(stat -c%s "$APK_PATH") bytes)"
 
       - name: Generate APK checksums
@@ -241,7 +244,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.meta.outputs.artifact_name }}
-          path: ${{ env.APK }}
+          path: ${{ steps.assemble.outputs.apk }}
           compression-level: 0   # APKs are already compressed; skip the work.
           retention-days: 30
           if-no-files-found: error
