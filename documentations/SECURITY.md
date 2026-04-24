@@ -8,9 +8,9 @@ publicly tagged release — receive **no** backports.
 
 | Version | Status |
 |---|---|
-| Latest `main` build | ✅ Supported |
-| Previous release | ⚠️ Best-effort, no guarantee |
-| Anything older | ❌ Unsupported |
+| Latest `main` build | **Supported** |
+| Previous release | **Best-effort**, no guarantee |
+| Anything older | **Unsupported** |
 
 ## Reporting a vulnerability
 

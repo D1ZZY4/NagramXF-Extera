@@ -33,7 +33,7 @@ TELEGRAM_APP_HASH=0123456789abcdef0123456789abcdef
 The same values may be supplied through the `TELEGRAM_APP_ID` /
 `TELEGRAM_APP_HASH` environment variables — useful in CI.
 
-> ⚠️ **Do not commit `local.properties`.** It is already in `.gitignore`.
+> **Note —** do not commit `local.properties`. It is already in `.gitignore`.
 
 ## 3. Signing (optional but recommended)
 

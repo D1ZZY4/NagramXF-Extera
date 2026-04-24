@@ -32,19 +32,19 @@ that does its own bookkeeping.
 
 | | |
 |---|---|
-| 🔒 **Privacy by default** | No analytics, no ads, no telemetry. Optional integrations are opt-in and clearly labelled. |
-| 🧩 **Best-of-fork distillation** | Curated picks from AyuGram, Cherrygram, exteraGram, OctoGram, Nagram&nbsp;X / XF. |
-| ⚙️ **Automatic versioning** | `versionCode` from `git rev-list`, `versionName` from short SHA. Zero bookkeeping. |
-| 🚀 **Sub-10-minute CI** | Single-ABI release build with cached Gradle, ccache-wrapped NDK, and partial-clone checkout. |
-| 🧱 **Reproducible builds** | NDK, build-tools, Kotlin, and AGP all pinned in one place. |
-| 🛡️ **Hardened release pipeline** | R8 full-mode, blobless clones, deterministic SDK pinning, on-failure log shipping. |
+| **Privacy by default** | No analytics, no ads, no telemetry. Optional integrations are opt-in and clearly labelled. |
+| **Best-of-fork distillation** | Curated picks from AyuGram, Cherrygram, exteraGram, OctoGram, Nagram&nbsp;X / XF. |
+| **Automatic versioning** | `versionCode` from `git rev-list`, `versionName` from short SHA. Zero bookkeeping. |
+| **Sub-10-minute CI** | Single-ABI release build with cached Gradle, ccache-wrapped NDK, and partial-clone checkout. |
+| **Reproducible builds** | NDK, build-tools, Kotlin, and AGP all pinned in one place. |
+| **Hardened release pipeline** | R8 full-mode, blobless clones, deterministic SDK pinning, on-failure log shipping. |
 
 ## Project facts
 
 | | |
 |---|---|
 | **Display name** | Nagram Extera |
-| **Application id** | `fork.risin42.nagramx` |
+| **Application id** | `app.nagramextera` |
 | **Min / target SDK** | 27 (Android 8.1) / 36 |
 | **Languages** | Java + Kotlin (JVM 21) |
 | **Toolchain** | Gradle 8.x · AGP 9.1 · NDK 27.2 · CMake 3.31 |
