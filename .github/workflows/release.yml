@@ -1,1 +1,390 @@
+<<<<<<< HEAD
+# ---------------------------------------------------------------------------
+# Nagram Extera — Release pipeline
+# ---------------------------------------------------------------------------
+# Builds a signed arm64-v8a release APK, archives it as a workflow artifact,
+# and (optionally) publishes it to the configured Telegram release channel.
+#
+# Performance posture
+#   * Single-ABI build (arm64-v8a) by default — no universal APK.
+#   * Gradle daemon ON, configuration-cache ON, build-cache ON, parallel ON.
+#   * setup-gradle handles dependency + build cache (no manual ~/.gradle cache).
+#   * ccache wraps the NDK toolchain and persists across runs.
+#   * Lint and unit tests are skipped for release builds (run them in PR CI).
+#   * Partial git clone (blobless) — fetched in full only for versionCode.
+#
+# Triggers
+#   * push to `main`         — full build + publish
+#   * workflow_dispatch      — manual rebuild, with an `upload` toggle
+#
+# Skip tokens (in the head commit message)
+#   * `[skip upload]` → build-only, no publish
+#   * `[skip ci]`     → workflow does not run
+# ---------------------------------------------------------------------------
+
+name: Release Build
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - 'documentations/**'
+      - '.github/**'
+      - '!.github/workflows/release.yml'
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: 'Skip Upload: set to "y" to skip publishing this build.'
+        required: false
+        default: ''
+        type: string
+      native_target:
+        description: 'Native ABI to build (arm64-v8a, armeabi-v7a, x86_64).'
+        required: false
+        default: 'arm64-v8a'
+        type: string
+
+concurrency:
+  group: release-build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  # Latest pinned toolchain versions — bump in one place.
+  JAVA_VERSION: '21'
+  JAVA_DISTRIBUTION: 'temurin'
+  PYTHON_VERSION: '3.13'
+  ANDROID_BUILD_TOOLS: '36.0.0'
+  ANDROID_PLATFORM: 'android-36'
+  ANDROID_NDK: '27.2.12479018'
+  ANDROID_CMAKE: '3.31.6'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. Build
+  # ---------------------------------------------------------------------------
+  build:
+    name: Gradle Build (release)
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    outputs:
+      build_timestamp: ${{ steps.meta.outputs.build_timestamp }}
+      version_name:    ${{ steps.meta.outputs.version_name }}
+      version_code:    ${{ steps.meta.outputs.version_code }}
+      short_sha:       ${{ steps.meta.outputs.short_sha }}
+      artifact_name:   ${{ steps.meta.outputs.artifact_name }}
+
+    env:
+      NATIVE_TARGET: ${{ github.event.inputs.native_target || 'arm64-v8a' }}
+      CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
+      CCACHE_HARDLINK: "true"
+      CCACHE_NOHASHDIR: "true"
+      CCACHE_SLOPPINESS: "include_file_mtime,include_file_ctime,time_macros,locale,system_headers"
+      CCACHE_MAXSIZE: "5G"
+      GRADLE_OPTS: "-Dorg.gradle.welcome=never -Dorg.gradle.configureondemand=true -Dkotlin.incremental=true -Dkotlin.compiler.execution.strategy=in-process"
+
+    steps:
+      # ---- Source ---------------------------------------------------------
+      # Blobless partial clone is much faster than a full clone but still
+      # exposes the entire commit graph, which is all `git rev-list --count`
+      # needs.
+      - name: Checkout (blobless full history)
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          filter: blob:none
+          submodules: recursive
+          show-progress: false
+
+      - name: Normalise wrapper permissions
+        run: chmod +x gradlew
+
+      # ---- Toolchain ------------------------------------------------------
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v5
+        with:
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ccache-${{ runner.os }}-${{ env.NATIVE_TARGET }}
+          max-size: 5G
+          append-timestamp: false
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+          add-job-summary: 'on-failure'
+          add-job-summary-as-pr-comment: never
+          gradle-home-cache-cleanup: true
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          log-accepted-android-sdk-licenses: false
+          packages: >-
+            build-tools;${{ env.ANDROID_BUILD_TOOLS }}
+            ndk;${{ env.ANDROID_NDK }}
+            platforms;${{ env.ANDROID_PLATFORM }}
+            cmake;${{ env.ANDROID_CMAKE }}
+
+      # ---- Configuration --------------------------------------------------
+      - name: Wire Android SDK + tune Gradle for the runner
+        run: |
+          set -euo pipefail
+          echo "sdk.dir=${ANDROID_HOME}" >> local.properties
+
+          MEMORY_GB=$(awk '/MemTotal/ {printf "%d", $2/1024/1024}' /proc/meminfo)
+          CPU_COUNT=$(nproc)
+          echo "Runner: ${MEMORY_GB} GB RAM, ${CPU_COUNT} vCPU"
+
+          # Reset and apply tuned values for the runner.
+          sed -i \
+            -e '/^org\.gradle\.jvmargs=/d' \
+            -e '/^org\.gradle\.parallel=/d' \
+            -e '/^org\.gradle\.caching=/d' \
+            -e '/^org\.gradle\.configuration-cache=/d' \
+            -e '/^org\.gradle\.daemon=/d' \
+            -e '/^org\.gradle\.workers\.max=/d' \
+            -e '/^kotlin\.incremental=/d' \
+            gradle.properties
+
+          XMX=$([ "$MEMORY_GB" -ge 12 ] && echo 8 || echo 4)
+          {
+            echo "org.gradle.jvmargs=-Xmx${XMX}G -XX:MaxMetaspaceSize=2G -XX:+UseParallelGC -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
+            echo "org.gradle.daemon=true"
+            echo "org.gradle.parallel=true"
+            echo "org.gradle.caching=true"
+            echo "org.gradle.configuration-cache=true"
+            echo "org.gradle.workers.max=${CPU_COUNT}"
+            echo "kotlin.incremental=true"
+          } >> gradle.properties
+
+          echo "--- gradle.properties ---"
+          cat gradle.properties
+
+      - name: Restore signing keystore (optional)
+        if: ${{ env.KEYSTORE_BASE64 != '' }}
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > TMessagesProj/release.keystore
+
+      # ---- Pre-flight build metadata --------------------------------------
+      - name: Compute build metadata
+        id: meta
+        run: |
+          set -euo pipefail
+          SHORT_SHA=$(git rev-parse --short=7 HEAD)
+          VERSION_CODE=$(git rev-list --count HEAD)
+          VERSION_NAME_BASE=$(grep -E '^APP_VERSION_NAME=' gradle.properties | cut -d= -f2)
+          VERSION_NAME="${VERSION_NAME_BASE}-${SHORT_SHA}"
+          BUILD_TIMESTAMP=$(date +%s)
+          ARTIFACT_NAME="NagramExtera-Release-${VERSION_NAME}-${BUILD_TIMESTAMP}"
+
+          {
+            echo "short_sha=${SHORT_SHA}"
+            echo "version_code=${VERSION_CODE}"
+            echo "version_name=${VERSION_NAME}"
+            echo "build_timestamp=${BUILD_TIMESTAMP}"
+            echo "artifact_name=${ARTIFACT_NAME}"
+          } | tee -a "$GITHUB_OUTPUT"
+
+      # ---- Build ----------------------------------------------------------
+      # Skip lint and tests in the release pipeline; they belong in PR CI.
+      # `--build-cache` reuses outputs from previous successful runs.
+      - name: Assemble release APK
+        env:
+          LOCAL_PROPERTIES: ${{ secrets.LOCAL_PROPERTIES }}
+          COMMIT_ID: ${{ github.sha }}
+          BUILD_TIMESTAMP: ${{ steps.meta.outputs.build_timestamp }}
+        run: |
+          set -euo pipefail
+          ./gradlew \
+            --build-cache --parallel --configuration-cache \
+            -x lint -x lintVitalRelease -x test \
+            :TMessagesProj:assembleRelease
+
+          APK_PATH=$(find TMessagesProj/build/outputs/apk -type f -name "*${NATIVE_TARGET}*.apk" | head -n1)
+          if [ -z "$APK_PATH" ]; then
+            echo "::error::No APK matching ABI '${NATIVE_TARGET}' found under TMessagesProj/build/outputs/apk"
+            find TMessagesProj/build/outputs/apk -type f -ls || true
+            exit 1
+          fi
+          APK_DIR=$(dirname "$APK_PATH")
+          echo "APK=$APK_DIR"             >> "$GITHUB_ENV"
+          echo "APK_FILE=$APK_PATH"       >> "$GITHUB_ENV"
+          echo "Built: $APK_PATH ($(stat -c%s "$APK_PATH") bytes)"
+
+      - name: Generate APK checksums
+        run: |
+          set -euo pipefail
+          ( cd "$APK" && sha256sum *.apk > SHA256SUMS && sha1sum *.apk > SHA1SUMS )
+          echo "--- SHA256 ---"
+          cat "$APK/SHA256SUMS"
+
+      # ---- Artifacts ------------------------------------------------------
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.meta.outputs.artifact_name }}
+          path: ${{ env.APK }}
+          compression-level: 0   # APKs are already compressed; skip the work.
+          retention-days: 30
+          if-no-files-found: error
+
+      # ---- Diagnostics on failure ----------------------------------------
+      - name: Collect build logs on failure
+        if: failure()
+        run: |
+          set +e
+          mkdir -p build-logs
+          cp -v gradle.properties local.properties build-logs/ 2>/dev/null || true
+          find . -type d -name "reports" -path "*/build/*" -exec cp -r {} build-logs/ \; 2>/dev/null
+          find . -type d -name "logs"    -path "*/build/*" -exec cp -r {} build-logs/ \; 2>/dev/null
+          find . -type f -name "*.log"   -path "*/build/*" -exec cp    {} build-logs/ \; 2>/dev/null
+          find ~/.gradle/daemon -type f -name "*.out.log" -exec cp {} build-logs/ \; 2>/dev/null
+          ARCHIVE="build-logs-${{ github.run_id }}.zip"
+          ( cd build-logs && zip -qr "../$ARCHIVE" . ) || true
+          ls -lh "$ARCHIVE" || true
+
+      - name: Upload build log archive
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-${{ github.run_id }}
+          path: build-logs-${{ github.run_id }}.zip
+          retention-days: 14
+          if-no-files-found: warn
+
+  # ---------------------------------------------------------------------------
+  # 2. Publish to Telegram (release channel)
+  # ---------------------------------------------------------------------------
+  upload:
+    name: Publish to Telegram
+    needs: build
+    if: |
+      success()
+      && github.event.inputs.upload != 'y'
+      && !contains(github.event.head_commit.message, '[skip upload]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout (sources for upload.py)
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          show-progress: false
+
+      - name: Download release artifact
+        uses: actions/download-artifact@v5
+        with:
+          path: artifacts
+          merge-multiple: false
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: Tools/scripts/requirements.txt
+
+      - name: Resolve APK path
+        id: locate
+        run: |
+          set -euo pipefail
+          APK=$(find artifacts -type f -name "*arm64-v8a*.apk" | head -n1)
+          if [ -z "$APK" ]; then
+            echo "::error::No arm64-v8a APK found in downloaded artifacts."
+            find artifacts -type f -ls
+            exit 1
+          fi
+          echo "apk=$APK" | tee -a "$GITHUB_OUTPUT"
+
+      - name: Send to Telegram
+        env:
+          APP_ID:          ${{ secrets.APP_ID }}
+          APP_HASH:        ${{ secrets.APP_HASH }}
+          COMMIT_ID:       ${{ github.sha }}
+          COMMIT_URL:      ${{ github.event.head_commit.url }}
+          COMMIT_MESSAGE:  ${{ github.event.head_commit.message }}
+          BUILD_TIMESTAMP: ${{ needs.build.outputs.build_timestamp }}
+          VERSION_NAME:    ${{ needs.build.outputs.version_name }}
+          VERSION_CODE:    ${{ needs.build.outputs.version_code }}
+        run: |
+          set -euo pipefail
+          export mini64="${{ steps.locate.outputs.apk }}"
+          echo "Publishing $mini64"
+          python -m pip install --upgrade pip
+          python -m pip install -r Tools/scripts/requirements.txt
+          python Tools/scripts/upload.py \
+            "${{ secrets.HELPER_BOT_TOKEN }}" \
+            "${{ secrets.HELPER_BOT_TARGET }}" \
+            release \
+            "${{ secrets.HELPER_BOT_CANARY_TARGET }}"
+
+  # ---------------------------------------------------------------------------
+  # 3. Failure-mode log shipping
+  # ---------------------------------------------------------------------------
+  upload-logs:
+    name: Ship build logs to Telegram
+    needs: build
+    if: failure()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Download log archive
+        uses: actions/download-artifact@v5
+        with:
+          name: build-logs-${{ github.run_id }}
+          path: logs
+
+      - name: Send log archive to Telegram
+        env:
+          TG_BOT_TOKEN:   ${{ secrets.HELPER_BOT_TOKEN }}
+          TG_CHAT_ID:     ${{ secrets.HELPER_BOT_TARGET }}
+          COMMIT_ID:      ${{ github.sha }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          RUN_URL:        ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          if [ -z "${TG_BOT_TOKEN:-}" ] || [ -z "${TG_CHAT_ID:-}" ]; then
+            echo "Telegram secrets not configured; skipping log upload."
+            exit 0
+          fi
+          ARCHIVE=$(find logs -type f -name "*.zip" | head -n1)
+          if [ -z "$ARCHIVE" ]; then
+            echo "No log archive found."
+            exit 0
+          fi
+          {
+            printf 'Nagram Extera build failed\n'
+            printf 'Commit:  %s\n'  "${COMMIT_ID}"
+            printf 'Run:     %s\n'  "${RUN_URL}"
+            printf 'Message: %s\n'  "${COMMIT_MESSAGE}"
+          } > caption.txt
+          curl -sSf -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument" \
+            -F chat_id="${TG_CHAT_ID}" \
+            -F caption="$(cat caption.txt)" \
+            -F document=@"${ARCHIVE}"
+=======
+
+>>>>>>> 27c878cedbbe8958dd0fa1b388588ebcb38fd051
 
