@@ -1,0 +1,8 @@
+2026-04-24T02:29:40.0490000Z Job is waiting for a hosted runner to come online.
+2026-04-24T02:29:40.0490000Z Job is about to start running on the hosted runner: GitHub Actions 1000001098
+2026-04-24T02:29:40.0450000Z Requested labels: ubuntu-latest
+2026-04-24T02:29:40.0450000Z Job defined at: D1ZZY4/NagramXF-Extera/.github/workflows/release.yml@refs/heads/dev
+2026-04-24T02:29:40.0450000Z Waiting for a runner to pick up this job...
+2026-04-24T02:29:40.0440000Z Evaluating upload-logs.if
+2026-04-24T02:29:40.0440000Z Evaluating: failure()
+2026-04-24T02:29:40.0440000Z Result: true

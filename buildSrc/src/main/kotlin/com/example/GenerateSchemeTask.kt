@@ -64,7 +64,7 @@ abstract class GenerateSchemeTask : DefaultTask() {
 
         val telegramClasses = TelegramCodeParser.parse(files)
         val tlSchemaFull = TlSchemaJsonParser.parse(resourcesDir, LAYER)
-        val tlSchemaFilter = tlSchemaFull.applyRules(RULES.rules)
+        tlSchemaFull.applyRules(RULES.rules)
 
         val undefinedTelegramClasses = telegramClasses.groupedByConstructorAll.filterKeys {
             it !in tlSchemaFull.magicsAll
@@ -73,7 +73,7 @@ abstract class GenerateSchemeTask : DefaultTask() {
         File(outputDir, "not_linked_classes.txt")
             .writeText(undefinedTelegramClasses.map { it.toString() }.sorted().joinToString("\n"))
 
-        val totalHistory = tlSchemaFull.getAllConstructorsHistory()
+        tlSchemaFull.getAllConstructorsHistory()
         val classesByUniqueIds = telegramClasses.groupedByConstructorUnique
         val schema = SchemeAllLayersParser.parseAllLayers(resourcesDir)
 
@@ -108,13 +108,13 @@ abstract class GenerateSchemeTask : DefaultTask() {
         val allMethods = (schema.methodsActual2 + schema.methodsLegacy2).toSet()
 
         val constructorTypesMap = allConstructors.groupBy { it.tl.key.name.type }
-        val enumTypes = constructorTypesMap.filter { entry ->
+        constructorTypesMap.filter { entry ->
             entry.value.none { it.tl.params.list.isNotEmpty() }
         }
 
         val schemaIds = allConstructors.map { it.tl.key.constructorId } +
                 allMethods.map { it.tl.key.constructorId }
-        val schemaAllIds = schemaIds.toSet()
+        schemaIds.toSet()
         val schemaUniqueIds = schemaIds.groupingBy { it }.eachCount().filterValues { it == 1 }.keys
         val constructorsByUniqueIds = allConstructors
             .filter { it.tl.key.constructorId in schemaUniqueIds }
