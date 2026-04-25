@@ -333,13 +333,17 @@ jobs:
           set -euo pipefail
           export mini64="${{ steps.locate.outputs.apk }}"
           echo "Publishing $mini64"
-          python -m pip install --upgrade pip
-          python -m pip install -r Tools/scripts/requirements.txt
-          python Tools/scripts/upload.py \
-            "${{ secrets.HELPER_BOT_TOKEN }}" \
-            "${{ secrets.HELPER_BOT_TARGET }}" \
-            release \
-            "${{ secrets.HELPER_BOT_CANARY_TARGET }}"
+          if [ -f "Tools/scripts/requirements.txt" ] && [ -f "Tools/scripts/upload.py" ]; then
+            python -m pip install --upgrade pip
+            python -m pip install -r Tools/scripts/requirements.txt
+            python Tools/scripts/upload.py \
+              "${{ secrets.HELPER_BOT_TOKEN }}" \
+              "${{ secrets.HELPER_BOT_TARGET }}" \
+              release \
+              "${{ secrets.HELPER_BOT_CANARY_TARGET }}"
+          else
+            echo "Telegram upload script not found; skipping upload."
+          fi
 
   # ---------------------------------------------------------------------------
   # 3. Failure-mode log shipping
