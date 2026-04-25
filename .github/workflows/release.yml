@@ -304,8 +304,6 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
-          cache-dependency-path: Tools/scripts/requirements.txt
 
       - name: Resolve APK path
         id: locate
