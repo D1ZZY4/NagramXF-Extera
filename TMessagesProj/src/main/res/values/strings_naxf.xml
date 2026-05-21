@@ -104,7 +104,18 @@
     <string name="SingleCornerRadius">Unified corner radius</string>
     <string name="SingleCornerRadiusInfo">Topic groups will use the same avatar shape as chat messages.</string>
     <string name="BlurOptions">Blur Options</string>
-    <string name="AyuMoments" translatable="false">AyuMoments</string>
+    <string name="AyuMoments" translatable="false">Ayugram</string>
+    <string name="NagramExtera" translatable="false">Nagram Extera</string>
+    <string name="NagramExteraContents">Contents</string>
+    <string name="NagramExteraChannel">Nagram Extera Channel</string>
+    <string name="NagramExteraReleaseChannel">Release Channel</string>
+    <string name="NagramExteraDiscussionGroup">Discussion Group</string>
+    <string name="NagramExteraFeaturesTips">Features Tips</string>
+    <string name="NagramExteraCredits">Credits</string>
+    <string name="NagramExteraSourceCode">Source Code</string>
+    <string name="NagramExteraSourceNagramXF" translatable="false">Nagram XF</string>
+    <string name="NagramExteraSourceAyugram" translatable="false">Ayugram</string>
+    <string name="NagramExteraInfo">Nagram Extera</string>
     <string name="AyuSpySettings">Spy Settings</string>
     <string name="AyuMomentsCustomHeader">Custom</string>
     <string name="SaveAttachmentsCardTitle">Save Attachments</string>
