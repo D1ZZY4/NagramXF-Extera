@@ -27,8 +27,8 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 **Smartphone (please complete the following information):**
- - Device: [e.g. MI6]
- - OS: [e.g. Android8.1]
+ - Device: [e.g. Redmi Note 12]
+ - OS: [e.g. Android 10]
  - Version [e.g. 5.15.0]
 
 **Additional context**

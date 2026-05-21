@@ -5,6 +5,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.2] | 2026-05-22
+
+### Fixes 
+
+- **App branding in version display** — updated the version text from `Nagram XF v{version}` to `Nagram Extera v{version}` in `AndroidUtil.getVersionText()` to reflect the project rename.
+
+---
+
 ## [Unreleased]
 
 ### Fixes & Improvements | 2026-05-22
