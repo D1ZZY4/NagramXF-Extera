@@ -1,8 +1,8 @@
-# Nagram XF
+# Nagram Extera
 
 ## Project Overview
 
-Nagram XF is a customized Android client for Telegram, forked from Nagram X. It integrates additional features from other Telegram forks including exteraGram and AyuGram.
+Nagram Extera is a customized Android client for Telegram, forked from Nagram XF. It integrates additional features from other Telegram forks including exteraGram and AyuGram.
 
 - **Platform:** Android (minSdk 27, targetSdk 36)
 - **Build System:** Gradle (with Kotlin DSL in buildSrc)
