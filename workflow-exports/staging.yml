@@ -1,0 +1,457 @@
+# ---------------------------------------------------------------------------
+# Nagram Extera — Staging pipeline
+# ---------------------------------------------------------------------------
+# Builds a signed arm64-v8a staging APK from the `dev` branch and
+# (optionally) publishes it to the configured Telegram staging channel.
+# Includes AI-powered commit summarisation via GitHub Models.
+#
+# Triggers
+#   * push to `dev`          — full build + publish
+#   * workflow_dispatch      — manual rebuild, with an `upload` toggle
+#
+# Skip tokens (in the head commit message)
+#   * `[skip upload]` → build-only, no publish
+#   * `[skip ci]`     → workflow does not run
+# ---------------------------------------------------------------------------
+
+name: Staging Build
+
+on:
+  push:
+    branches:
+      - dev
+    paths-ignore:
+      - '**.md'
+      - 'documentations/**'
+      - '.github/**'
+      - '!.github/workflows/staging.yml'
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: 'Skip Upload: set to "y" to skip publishing this build.'
+        required: false
+        default: ''
+        type: string
+      native_target:
+        description: 'Native ABI to build (arm64-v8a, armeabi-v7a, x86_64).'
+        required: false
+        default: 'arm64-v8a'
+        type: string
+
+concurrency:
+  group: staging-build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+  models: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  JAVA_VERSION: '21'
+  JAVA_DISTRIBUTION: 'temurin'
+  PYTHON_VERSION: '3.13'
+  ANDROID_BUILD_TOOLS: '36.0.0'
+  ANDROID_PLATFORM: 'android-36'
+  ANDROID_NDK: '27.2.12479018'
+  ANDROID_CMAKE: '3.31.6'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. Build
+  # ---------------------------------------------------------------------------
+  build:
+    name: Gradle Build (staging)
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    outputs:
+      build_timestamp: ${{ steps.meta.outputs.build_timestamp }}
+      version_name:    ${{ steps.meta.outputs.version_name }}
+      version_code:    ${{ steps.meta.outputs.version_code }}
+      short_sha:       ${{ steps.meta.outputs.short_sha }}
+      artifact_name:   ${{ steps.meta.outputs.artifact_name }}
+
+    env:
+      NATIVE_TARGET: ${{ github.event.inputs.native_target || 'arm64-v8a' }}
+      CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
+      CCACHE_HARDLINK: "true"
+      CCACHE_NOHASHDIR: "true"
+      CCACHE_SLOPPINESS: "include_file_mtime,include_file_ctime,time_macros,locale,system_headers"
+      CCACHE_MAXSIZE: "5G"
+      GRADLE_OPTS: "-Dorg.gradle.welcome=never -Dorg.gradle.configureondemand=true -Dkotlin.incremental=true -Dkotlin.compiler.execution.strategy=in-process"
+
+    steps:
+      - name: Checkout (blobless full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          filter: blob:none
+          submodules: recursive
+          show-progress: false
+
+      - name: Normalise wrapper permissions
+        run: chmod +x gradlew
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
+          check-latest: true
+
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ccache-${{ runner.os }}-${{ env.NATIVE_TARGET }}
+          max-size: 5G
+          append-timestamp: false
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: false
+          add-job-summary: 'on-failure'
+          add-job-summary-as-pr-comment: never
+          gradle-home-cache-cleanup: true
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          log-accepted-android-sdk-licenses: false
+          packages: >-
+            build-tools;${{ env.ANDROID_BUILD_TOOLS }}
+            ndk;${{ env.ANDROID_NDK }}
+            platforms;${{ env.ANDROID_PLATFORM }}
+            cmake;${{ env.ANDROID_CMAKE }}
+
+      - name: Wire Android SDK + tune Gradle for the runner
+        run: |
+          set -euo pipefail
+          echo "sdk.dir=${ANDROID_HOME}" >> local.properties
+
+          MEMORY_GB=$(awk '/MemTotal/ {printf "%d", $2/1024/1024}' /proc/meminfo)
+          CPU_COUNT=$(nproc)
+          echo "Runner: ${MEMORY_GB} GB RAM, ${CPU_COUNT} vCPU"
+
+          sed -i \
+            -e '/^org\.gradle\.jvmargs=/d' \
+            -e '/^org\.gradle\.parallel=/d' \
+            -e '/^org\.gradle\.caching=/d' \
+            -e '/^org\.gradle\.configuration-cache=/d' \
+            -e '/^org\.gradle\.daemon=/d' \
+            -e '/^org\.gradle\.workers\.max=/d' \
+            -e '/^kotlin\.incremental=/d' \
+            gradle.properties
+
+          XMX=$([ "$MEMORY_GB" -ge 12 ] && echo 8 || echo 4)
+          {
+            echo "org.gradle.jvmargs=-Xmx${XMX}G -XX:MaxMetaspaceSize=2G -XX:+UseParallelGC -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
+            echo "org.gradle.daemon=true"
+            echo "org.gradle.parallel=true"
+            echo "org.gradle.caching=true"
+            echo "org.gradle.configuration-cache=true"
+            echo "org.gradle.workers.max=${CPU_COUNT}"
+            echo "kotlin.incremental=true"
+          } >> gradle.properties
+
+          echo "--- gradle.properties ---"
+          cat gradle.properties
+
+      - name: Restore signing keystore (optional)
+        if: ${{ env.KEYSTORE_BASE64 != '' }}
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > TMessagesProj/release.keystore
+
+      - name: Compute build metadata
+        id: meta
+        run: |
+          set -euo pipefail
+          SHORT_SHA=$(git rev-parse --short=7 HEAD)
+          VERSION_CODE=$(git rev-list --count HEAD)
+          VERSION_NAME_BASE=$(grep -E '^APP_VERSION_NAME=' gradle.properties | cut -d= -f2)
+          VERSION_NAME="${VERSION_NAME_BASE}-staging-${SHORT_SHA}"
+          BUILD_TIMESTAMP=$(date +%s)
+          ARTIFACT_NAME="NagramExtera-Staging-${VERSION_NAME}-${BUILD_TIMESTAMP}"
+
+          {
+            echo "short_sha=${SHORT_SHA}"
+            echo "version_code=${VERSION_CODE}"
+            echo "version_name=${VERSION_NAME}"
+            echo "build_timestamp=${BUILD_TIMESTAMP}"
+            echo "artifact_name=${ARTIFACT_NAME}"
+          } | tee -a "$GITHUB_OUTPUT"
+
+      - id: assemble
+        name: Assemble staging APK
+        env:
+          LOCAL_PROPERTIES: ${{ secrets.LOCAL_PROPERTIES }}
+          COMMIT_ID: ${{ github.sha }}
+          BUILD_TIMESTAMP: ${{ steps.meta.outputs.build_timestamp }}
+        run: |
+          set -euo pipefail
+          ./gradlew \
+            --build-cache --parallel --configuration-cache \
+            -x lint -x test \
+            :TMessagesProj:assembleStaging
+
+          APK_PATH=$(find TMessagesProj/build/outputs/apk -type f -name "*${NATIVE_TARGET}*.apk" | head -n1)
+          if [ -z "$APK_PATH" ]; then
+            echo "::error::No APK matching ABI '${NATIVE_TARGET}' found under TMessagesProj/build/outputs/apk"
+            find TMessagesProj/build/outputs/apk -type f -ls || true
+            exit 1
+          fi
+          APK_DIR=$(dirname "$APK_PATH")
+          echo "APK=$APK_DIR"       >> "$GITHUB_ENV"
+          echo "APK_FILE=$APK_PATH" >> "$GITHUB_ENV"
+          echo "apk=$APK_DIR"       >> "$GITHUB_OUTPUT"
+          echo "apk_file=$APK_PATH" >> "$GITHUB_OUTPUT"
+          echo "Built: $APK_PATH ($(stat -c%s "$APK_PATH") bytes)"
+
+      - name: Generate APK checksums
+        run: |
+          set -euo pipefail
+          ( cd "$APK" && sha256sum *.apk > SHA256SUMS && sha1sum *.apk > SHA1SUMS )
+          echo "--- SHA256 ---"
+          cat "$APK/SHA256SUMS"
+
+      - name: Upload staging artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.meta.outputs.artifact_name }}
+          path: ${{ steps.assemble.outputs.apk }}
+          compression-level: 0
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Collect build logs on failure
+        if: failure()
+        run: |
+          set +e
+          mkdir -p build-logs
+          cp -v gradle.properties local.properties build-logs/ 2>/dev/null || true
+          find . -type d -name "reports" -path "*/build/*" -exec cp -r {} build-logs/ \; 2>/dev/null
+          find . -type d -name "logs"    -path "*/build/*" -exec cp -r {} build-logs/ \; 2>/dev/null
+          find . -type f -name "*.log"   -path "*/build/*" -exec cp    {} build-logs/ \; 2>/dev/null
+          find ~/.gradle/daemon -type f -name "*.out.log" -exec cp {} build-logs/ \; 2>/dev/null
+          ARCHIVE="build-logs-${{ github.run_id }}.zip"
+          ( cd build-logs && zip -qr "../$ARCHIVE" . ) || true
+          ls -lh "$ARCHIVE" || true
+
+      - name: Upload build log archive
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-${{ github.run_id }}
+          path: build-logs-${{ github.run_id }}.zip
+          retention-days: 14
+          if-no-files-found: warn
+
+  # ---------------------------------------------------------------------------
+  # 2. Publish to Telegram (staging channel)
+  # ---------------------------------------------------------------------------
+  upload:
+    name: Publish to Telegram (staging)
+    needs: build
+    if: |
+      success()
+      && github.event.inputs.upload != 'y'
+      && !contains(github.event.head_commit.message, '[skip upload]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          show-progress: false
+
+      - name: Download staging artifact
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: false
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Resolve APK path
+        id: locate
+        run: |
+          set -euo pipefail
+          APK=$(find artifacts -type f -name "*arm64-v8a*.apk" | head -n1)
+          if [ -z "$APK" ]; then
+            echo "::error::No arm64-v8a APK found in downloaded artifacts."
+            find artifacts -type f -ls
+            exit 1
+          fi
+          echo "apk=$APK" | tee -a "$GITHUB_OUTPUT"
+
+      - name: Prepare AI commit summary
+        id: prepare
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_MSG: ${{ github.event.head_commit.message }}
+        run: |
+          set -e
+          AI_SUMMARY_ENABLED="${{ vars.AI_SUMMARY_ENABLED }}"
+          if [ "$AI_SUMMARY_ENABLED" != "true" ] && [ "$AI_SUMMARY_ENABLED" != "TRUE" ]; then
+            echo "AI summary is disabled; skipping."
+            echo "ai_summary<<EOF" >> $GITHUB_OUTPUT
+            echo "" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          if ! command -v jq >/dev/null 2>&1; then
+            sudo apt-get update -y && sudo apt-get install -y jq
+          fi
+
+          BRANCH="${{ github.ref_name }}"
+          REPO="${{ github.repository }}"
+          HEAD_SHA="${{ github.sha }}"
+
+          LAST_SHA=$(curl -s -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            "https://api.github.com/repos/$REPO/actions/workflows/staging.yml/runs?status=completed&conclusion=success&branch=$BRANCH&per_page=1" \
+            | jq -r '.workflow_runs[0].head_sha // empty')
+
+          COMMIT_TEXT=""
+          TOTAL_COMMITS=0
+          if [ -n "$LAST_SHA" ]; then
+            COMPARE=$(curl -s -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              "https://api.github.com/repos/$REPO/compare/$LAST_SHA...$HEAD_SHA")
+            TOTAL_COMMITS=$(echo "$COMPARE" | jq -r '.total_commits // 0')
+            COMMIT_TEXT=$(echo "$COMPARE" | jq -r '[.commits[].commit.message] | join("\n\n")')
+          fi
+
+          [ -z "$COMMIT_TEXT" ] && COMMIT_TEXT="$HEAD_MSG"
+
+          if [ "$TOTAL_COMMITS" -lt 3 ]; then
+            echo "Found $TOTAL_COMMITS commits since last build; skipping AI summary."
+            echo "ai_summary<<EOF" >> $GITHUB_OUTPUT
+            echo "" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          MODEL_ID="${{ vars.AI_MODEL }}"
+          [ -z "$MODEL_ID" ] && MODEL_ID="openai/gpt-4o"
+
+          PROMPT=$(cat << 'EOP'
+          Please summarize the Git commit messages between the last CI build and the current build using Telegram HTML formatting (not Markdown):
+          - Output strictly valid HTML supported by Telegram Bot API (e.g., <b>, <i>, <u>, <s>, <code>, <pre>, <a href="...">, <blockquote>, <br>).
+          - Do NOT use Markdown, code fences, or backticks.
+          - Group by type: <b>✨ Features</b>, <b>🐛 Fixes</b>, <b>♻️ Refactors</b>, <b>⚠️ Breaking Changes</b>, <b>🧹 Others</b>.
+          - Under each header, use lines separated by <br>, start each item with •, max 20 items total.
+          - Escape &, <, > as &amp;, &lt;, &gt;.
+          - Ignore trivial commits (merges, formatting, chore, version bumps, docs-only).
+          Here are the commit messages:
+          EOP
+          )
+          CONTENT="$PROMPT\n$COMMIT_TEXT"
+          PAYLOAD=$(jq -n --arg content "$CONTENT" --arg model "$MODEL_ID" '{messages:[{role:"user",content:$content}],model:$model}')
+
+          RAW_RESPONSE=$(curl -s "https://models.github.ai/inference/chat/completions" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -d "$PAYLOAD")
+
+          SUMMARY=$(echo "$RAW_RESPONSE" | jq -r '.choices[0].message.content // empty')
+
+          COMBINED=""
+          [ -n "$SUMMARY" ] && COMBINED="Changes since last staging:\n\n$SUMMARY"
+
+          if [ -n "$LAST_SHA" ]; then
+            DIFF_URL="https://github.com/$REPO/compare/$LAST_SHA...$HEAD_SHA"
+          else
+            DIFF_URL="https://github.com/$REPO/commit/$HEAD_SHA"
+          fi
+          COMBINED="$COMBINED\n\n<a href=\"$DIFF_URL\"><b>Full changes</b></a>\n\nGenerated by $MODEL_ID"
+
+          echo "ai_summary<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMBINED" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Send to Telegram (staging channel)
+        env:
+          APP_ID:          ${{ secrets.APP_ID }}
+          APP_HASH:        ${{ secrets.APP_HASH }}
+          COMMIT_ID:       ${{ github.sha }}
+          COMMIT_URL:      ${{ github.event.head_commit.url }}
+          COMMIT_MESSAGE:  ${{ github.event.head_commit.message }}
+          BUILD_TIMESTAMP: ${{ needs.build.outputs.build_timestamp }}
+          VERSION_NAME:    ${{ needs.build.outputs.version_name }}
+          VERSION_CODE:    ${{ needs.build.outputs.version_code }}
+          AI_SUMMARY:      ${{ steps.prepare.outputs.ai_summary }}
+        run: |
+          set -euo pipefail
+          export mini64="${{ steps.locate.outputs.apk }}"
+          echo "Publishing $mini64"
+          if [ -f "Tools/scripts/requirements.txt" ] && [ -f "Tools/scripts/upload.py" ]; then
+            python -m pip install --upgrade pip
+            python -m pip install -r Tools/scripts/requirements.txt
+            python Tools/scripts/upload.py \
+              "${{ secrets.HELPER_BOT_TOKEN }}" \
+              "${{ secrets.HELPER_BOT_TARGET }}" \
+              test \
+              "${{ secrets.HELPER_BOT_CANARY_TARGET }}"
+          else
+            echo "Telegram upload script not found; skipping upload."
+          fi
+
+  # ---------------------------------------------------------------------------
+  # 3. Failure-mode log shipping
+  # ---------------------------------------------------------------------------
+  upload-logs:
+    name: Ship build logs to Telegram
+    needs: build
+    if: failure()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Download log archive
+        uses: actions/download-artifact@v4
+        with:
+          name: build-logs-${{ github.run_id }}
+          path: logs
+
+      - name: Send log archive to Telegram
+        env:
+          TG_BOT_TOKEN:   ${{ secrets.HELPER_BOT_TOKEN }}
+          TG_CHAT_ID:     ${{ secrets.HELPER_BOT_TARGET }}
+          COMMIT_ID:      ${{ github.sha }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          RUN_URL:        ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          if [ -z "${TG_BOT_TOKEN:-}" ] || [ -z "${TG_CHAT_ID:-}" ]; then
+            echo "Telegram secrets not configured; skipping log upload."
+            exit 0
+          fi
+          ARCHIVE=$(find logs -type f -name "*.zip" | head -n1)
+          if [ -z "$ARCHIVE" ]; then echo "No log archive found."; exit 0; fi
+          {
+            printf 'Nagram Extera staging build failed\n'
+            printf 'Commit:  %s\n' "${COMMIT_ID}"
+            printf 'Run:     %s\n' "${RUN_URL}"
+            printf 'Message: %s\n' "${COMMIT_MESSAGE}"
+          } > caption.txt
+          curl -sSf -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument" \
+            -F chat_id="${TG_CHAT_ID}" \
+            -F caption="$(cat caption.txt)" \
+            -F document=@"${ARCHIVE}"

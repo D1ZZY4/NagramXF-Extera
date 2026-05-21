@@ -1,0 +1,20 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "3XGkOhqv9j8oRJbzt1ZlV"
+uri = "file://workflow-exports/canary.yml"
+type = "unspecified"
+title = "canary.yml — Workflow Canary Build"
+
+[[outputs]]
+id = "qiAVLoyH28aZsq9EcfGlV"
+uri = "file://workflow-exports/pr.yml"
+type = "unspecified"
+title = "pr.yml — Workflow Pull Request CI"
+
+[[outputs]]
+id = "8iZ56xiwmA7Ttb1cxSV-m"
+uri = "file://workflow-exports/staging.yml"
+type = "unspecified"
+title = "staging.yml — Workflow Staging Build"
