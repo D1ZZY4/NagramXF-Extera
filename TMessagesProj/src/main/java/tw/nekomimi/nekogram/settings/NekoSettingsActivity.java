@@ -86,7 +86,6 @@ public class NekoSettingsActivity extends BaseNekoSettingsActivity {
 
 
     private int exteraInfoRow;
-    private int aboutRow;
 
     @Override
     protected void updateRows() {
@@ -112,7 +111,6 @@ public class NekoSettingsActivity extends BaseNekoSettingsActivity {
         nSettingsEndRow = addRow();
 
         exteraInfoRow = addRow();
-        aboutRow = addRow();
     }
 
     @Override
@@ -353,8 +351,6 @@ public class NekoSettingsActivity extends BaseNekoSettingsActivity {
             presentFragment(new NekoTranslatorSettingsActivity());
         } else if (position == exteraInfoRow) {
             presentFragment(new NagramExteraAboutActivity());
-        } else if (position == aboutRow) {
-            presentFragment(new NekoAboutActivity());
         } else if (position == importSettingsRow) {
             if (Build.VERSION.SDK_INT >= 33) {
                 openFilePicker();
@@ -427,9 +423,7 @@ public class NekoSettingsActivity extends BaseNekoSettingsActivity {
                     } else if (position == appRestartRow) {
                         textCell.setTextAndIcon(getString(R.string.RestartApp), R.drawable.msg_retry_solar, true);
                     } else if (position == exteraInfoRow) {
-                        textCell.setTextAndIcon(getString(R.string.NagramExteraInfo), R.drawable.msg_info, true);
-                    } else if (position == aboutRow) {
-                        textCell.setTextAndIcon(getString(R.string.About), R.drawable.msg_info, false);
+                        textCell.setTextAndIcon(getString(R.string.NagramExteraInfo), R.drawable.msg_info, false);
                     }
                     break;
                 }
@@ -443,7 +437,7 @@ public class NekoSettingsActivity extends BaseNekoSettingsActivity {
                 return TYPE_SHADOW;
             } else if (position == chatRow || position == generalRow || position == appearanceRow || position == ayuMomentsRow || position == passcodeRow || position == experimentRow || position == translatorRow ||
                     position == importSettingsRow || position == exportSettingsRow || position == resetSettingsRow || position == appRestartRow ||
-                    position == exteraInfoRow || position == aboutRow) {
+                    position == exteraInfoRow) {
                 return TYPE_TEXT;
             }
             return TYPE_SHADOW;

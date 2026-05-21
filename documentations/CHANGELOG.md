@@ -5,17 +5,53 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.1] — 2025-05-21
+
+### Fixes & Improvements
+
+#### Force Forward — reduced wait time
+The forward process for restricted messages (no-forward chats) now starts
+sending immediately for messages whose media is already cached locally.
+Previously, the engine downloaded every piece of media in the selected batch
+before forwarding anything, causing a long wait when mixing text, already-cached
+files, and un-cached files. Now each message is evaluated independently: if the
+file is already on device it forwards instantly; if not, only that specific file
+is downloaded before it is sent. Text messages and stickers are never delayed.
+
+#### Package name changed
+The application package ID has changed from `fork.risin42.nagramx` to
+`orang.nagram.extra`. This affects:
+- The installed app identifier on Android (a fresh install is required;
+  data from the old package is not migrated automatically).
+- Account authenticator type, contact provider MIME types, and FCM registration.
+- All related XML manifests and `google-services.json`.
+
+Note: users upgrading from Nagram XF or earlier Nagram Extera builds must
+uninstall the previous version before installing this build. Telegram will
+prompt for re-login on first launch.
+
+#### Settings — old "About" screen removed
+The legacy About screen (`NekoAboutActivity`) has been replaced entirely by the
+new **Nagram Extera** info screen, which includes upstream channel links, credits,
+and source code references in one place. The `nasettings/about` deep link now
+opens the new screen.
+
+---
+
 ## [1.0.0] — 2025-05-21
 
 ### Initial Release — Nagram Extera
 
-This marks the first official release of **Nagram Extera**, a customized Android Telegram client forked from Nagram XF and further enriched with features from exteraGram and AyuGram.
+This marks the first official release of **Nagram Extera**, a customized Android
+Telegram client forked from Nagram XF and further enriched with features from
+exteraGram and AyuGram.
 
 ---
 
 ### Branding & Identity
 
-- **App renamed** from Nagram XF to **Nagram Extera** across all user-facing surfaces, resource files, and build outputs.
+- **App renamed** from Nagram XF to **Nagram Extera** across all user-facing
+  surfaces, resource files, and build outputs.
 - **APK output filename** updated to `NagramExtera-v{version}-{abi}.apk`.
 - **Default custom title** updated to "Nagram Extera".
 - **Version numbering** reset to `1.0.0` to reflect the new project identity.
@@ -24,43 +60,43 @@ This marks the first official release of **Nagram Extera**, a customized Android
 
 ### Settings & About Screen
 
-- **Added "Nagram Extera" info screen** in the main settings menu — a dedicated screen (similar in structure to the Ayugram settings screen) containing:
-  - **Contents** — links to the official Nagram Extera Channel (`@NagramExteraOfficial`), Release Channel (`@NagramExteraCloud`), Discussion Group (`@NagramExteraCommunity`), and Features Tips (`@NagramTips`).
-  - **Credits** — attribution to upstream projects: Features Tips (`@NagramTips`), Nagram XF (`@NagramX_Fork`), Nagram X (`@NagramX`), and Nagram (`@nagram_channel`).
-  - **Source Code** — direct links to the GitHub repositories of Nagram Extera, Nagram X, Nagram XF, and AyuGram.
-- **"Ayugram" settings menu** (previously named "AyuMoments") — renamed across all English strings, settings entries, and the About section for accuracy and consistency with upstream AyuGram branding.
+- **Added "Nagram Extera" info screen** in the main settings menu, containing:
+  - **Contents** — official channel (`@NagramExteraOfficial`), release channel
+    (`@NagramExteraCloud`), discussion group (`@NagramExteraCommunity`), and
+    features tips (`@NagramTips`).
+  - **Credits** — Features Tips, Nagram XF, Nagram X, Nagram.
+  - **Source Code** — GitHub links for Nagram Extera, Nagram X, Nagram XF,
+    and AyuGram.
+- **"Ayugram" menu** (previously "AyuMoments") — renamed in all English
+  strings for consistency with upstream AyuGram branding.
 
 ---
 
 ### Upstream Merges & Features
 
-Nagram Extera 1.0.0 integrates all features available in Nagram XF at the time of fork, including:
+Nagram Extera 1.0.0 integrates all features from Nagram XF at the time of fork:
 
-- **AyuGram integration** — Ghost Mode, Regex Filters, AyuSpy Settings, deleted message tracking and appearance customization (deleted mark style, color, custom text, semi-transparent view).
-- **Nagram X features** — AI Translator (LLM-based, supports OpenAI/Gemini/Groq/DeepSeek/xAI/Cerebras), deleted and edited message history, custom deleted mark, premium emoji as sticker, and all upstream Nagram-specific settings.
-- **exteraGram additions** — Now Playing (Last.fm & local integration), Bottom Bar display modes, Home Drawer, avatar corner customization, force forward, peek online, and schedule messages.
-- **UI enhancements** — Blur options, square floating button, separate headers, sticker size control, OneUI style support, remove message tail, user avatars in message preview, recent chats sidebar.
-- **Camera improvements** — Extended FPS range, seamless switching, stabilization, static zoom, per-session camera memory, and configurable video message camera (front/rear/ask).
-- **Message filters** — Regex-based filters with mask mode, shadow ban list, import/export via URL or clipboard, per-chat exclusions, and reversed expression support.
+- **AyuGram** — Ghost Mode, Regex Filters, AyuSpy, deleted message tracking,
+  appearance customization (deleted mark style, color, custom text, semi-transparent view).
+- **Nagram X** — AI Translator (OpenAI/Gemini/Groq/DeepSeek/xAI/Cerebras),
+  deleted and edited message history, custom deleted mark, premium emoji as sticker.
+- **exteraGram** — Now Playing (Last.fm & local), Bottom Bar modes, Home Drawer,
+  avatar corner customization, force forward, peek online, schedule messages.
+- **UI** — Blur options, square floating button, separate headers, sticker size
+  control, OneUI style, remove message tail, user avatars in message preview.
+- **Camera** — Extended FPS, seamless switching, stabilization, static zoom,
+  per-session memory, configurable video message camera (front/rear/ask).
 
 ---
 
 ### CI/CD & Build System
 
-- **GitHub Actions workflows** updated to publish APKs to both Telegram channels and GitHub Releases on every build:
-  - `release.yaml` — Creates a full GitHub Release for every push to `main`.
-  - `canary.yaml` — Creates a GitHub pre-release for every push to `canary`.
-  - `staging.yaml` — Creates a GitHub pre-release for every push to `dev`.
-- **Secret naming convention** standardized: `BOT_TOKEN`, `REALEASE_UPLOAD_ID`, `CANARY_UPLOAD_ID`.
-- **Workflow file extensions** corrected to `.yaml` throughout all internal references.
-- All GitHub Actions pinned to latest stable versions.
-
----
-
-### Known Limitations
-
-- Package name remains `fork.risin42.nagramx` for compatibility with existing installations. A package rename is planned for a future release.
-- Some strings in non-English language files may still reference legacy "AyuMoments" labels; these will be updated as translations are contributed.
+- GitHub Actions workflows publish APKs to Telegram and GitHub Releases.
+  - `release.yaml` — full release on push to `main`; auto-increments
+    `APP_VERSION_CODE` after each successful publish.
+  - `canary.yaml` — pre-release on push to `canary`.
+  - `staging.yaml` — pre-release on push to `dev`.
+- Secrets: `BOT_TOKEN`, `REALEASE_UPLOAD_ID`, `CANARY_UPLOAD_ID`.
 
 ---
 

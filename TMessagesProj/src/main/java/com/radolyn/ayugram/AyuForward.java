@@ -292,16 +292,6 @@ public class AyuForward {
                 return;
             }
 
-            boolean fullAyuForwardsNeeded = isFullAyuForwardsNeeded(messages);
-            ArrayList<MessageObject> pendingDownloads = collectPendingDownloads(messages, fullAyuForwardsNeeded);
-            if (!pendingDownloads.isEmpty()) {
-                updateLoadingState(LocaleController.getString(R.string.ForceForwardStatusWaitingDownloads));
-                AyuSequentialUtils.loadDocumentsSync(currentAccount, pendingDownloads);
-                if (!ensureTaskCanProceed(taskId, onComplete)) {
-                    return;
-                }
-            }
-
             LongSparseArray<ForwardGroupInfo> groupInfos = new LongSparseArray<>();
             prepareGroupState(messages, groupInfos);
             totalMessages = messages.size();
@@ -317,6 +307,19 @@ public class AyuForward {
                 if (messageObject == null || messageObject.messageOwner == null) {
                     onMessageSkipped();
                     continue;
+                }
+
+                boolean needsDownload = (isFullAyuForwardsNeeded(messageObject) || AyuMessageUtils.isUnforwardable(messageObject))
+                        && AyuMessageUtils.isMediaDownloadable(messageObject, false)
+                        && !hasLocalCopy(messageObject);
+                if (needsDownload) {
+                    updateLoadingState(LocaleController.getString(R.string.ForceForwardStatusWaitingDownloads));
+                    ArrayList<MessageObject> single = new ArrayList<>(1);
+                    single.add(messageObject);
+                    AyuSequentialUtils.loadDocumentsSync(currentAccount, single);
+                    if (!ensureTaskCanProceed(taskId, onComplete)) {
+                        return;
+                    }
                 }
 
                 ForwardGroupState groupState = consumeGroupState(messageObject, groupInfos);

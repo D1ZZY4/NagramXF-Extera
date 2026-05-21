@@ -412,7 +412,7 @@
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
-                <data android:mimeType="vnd.android.cursor.item/vnd.fork.risin42.nagramx.android.profile"/>
+                <data android:mimeType="vnd.android.cursor.item/vnd.orang.nagram.extra.android.profile"/>
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
@@ -459,8 +459,8 @@
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
-                <data android:mimeType="vnd.android.cursor.item/vnd.fork.risin42.nagramx.android.call"/>
-                <data android:mimeType="vnd.android.cursor.item/vnd.fork.risin42.nagramx.android.call.video"/>
+                <data android:mimeType="vnd.android.cursor.item/vnd.orang.nagram.extra.android.call"/>
+                <data android:mimeType="vnd.android.cursor.item/vnd.orang.nagram.extra.android.call.video"/>
             </intent-filter>
         </activity-alias>
         <activity
@@ -715,7 +715,7 @@
             </intent-filter>
         </service>
 
-		<receiver android:name=".MusicPlayerReceiver" android:exported="false">
+                <receiver android:name=".MusicPlayerReceiver" android:exported="false">
             <intent-filter>
                 <action android:name="org.telegram.android.musicplayer.close" />
                 <action android:name="org.telegram.android.musicplayer.pause" />

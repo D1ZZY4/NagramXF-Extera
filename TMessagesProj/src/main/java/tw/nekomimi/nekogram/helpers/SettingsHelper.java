@@ -18,7 +18,7 @@ import tw.nekomimi.nekogram.settings.BaseNekoSettingsActivity;
 import tw.nekomimi.nekogram.settings.BaseNekoXSettingsActivity;
 import tw.nekomimi.nekogram.settings.GhostModeActivity;
 import tw.nekomimi.nekogram.settings.MainTabsCustomizeActivity;
-import tw.nekomimi.nekogram.settings.NekoAboutActivity;
+import tw.nekomimi.nekogram.settings.NagramExteraAboutActivity;
 import tw.nekomimi.nekogram.settings.NekoAppearanceSettingsActivity;
 import tw.nekomimi.nekogram.settings.NekoAyuMomentsSettingsActivity;
 import tw.nekomimi.nekogram.settings.NekoAyuSpySettingsActivity;
@@ -53,7 +53,7 @@ public class SettingsHelper {
         } else {
             switch (segments.get(1)) {
                 case "about":
-                    fragment = new NekoAboutActivity();
+                    fragment = new NagramExteraAboutActivity();
                     break;
                 case "chat":
                 case "chats":

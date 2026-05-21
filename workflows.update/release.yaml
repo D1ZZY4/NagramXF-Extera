@@ -359,7 +359,44 @@ jobs:
           generate_release_notes: false
 
   # ---------------------------------------------------------------------------
-  # 3. Failure-mode log shipping
+  # 3. Auto-increment version code after successful release
+  # ---------------------------------------------------------------------------
+  version-bump:
+    name: Bump APP_VERSION_CODE
+    needs: [build, upload]
+    if: success() && github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Increment APP_VERSION_CODE
+        id: bump
+        run: |
+          set -euo pipefail
+          CURRENT=$(grep -E '^APP_VERSION_CODE=' gradle.properties | cut -d= -f2)
+          NEW=$((CURRENT + 1))
+          sed -i "s/^APP_VERSION_CODE=.*/APP_VERSION_CODE=${NEW}/" gradle.properties
+          echo "prev=${CURRENT}" | tee -a "$GITHUB_OUTPUT"
+          echo "next=${NEW}"     | tee -a "$GITHUB_OUTPUT"
+
+      - name: Commit and push
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add gradle.properties
+          git diff --cached --quiet && { echo "Nothing to commit."; exit 0; }
+          git commit -m "ci: bump APP_VERSION_CODE ${{ steps.bump.outputs.prev }} → ${{ steps.bump.outputs.next }} [skip ci]"
+          git push
+
+  # ---------------------------------------------------------------------------
+  # 4. Failure-mode log shipping
   # ---------------------------------------------------------------------------
   upload-logs:
     name: Ship build logs to Telegram
