@@ -12,6 +12,14 @@
 # Skip tokens (in the head commit message)
 #   * `[skip upload]` → build-only, no publish
 #   * `[skip ci]`     → workflow does not run
+#
+# Required secrets
+#   * LOCAL_PROPERTIES      — base64-encoded local.properties (APP_ID, APP_HASH, signing)
+#   * BOT_TOKEN             — Telegram bot token for publishing
+#   * REALEASE_UPLOAD_ID    — Telegram chat ID for the staging/release channel
+#   * CANARY_UPLOAD_ID      — Telegram chat ID for the canary channel
+#   * APP_ID / APP_HASH     — Telegram MTProto credentials
+#   * KEYSTORE_BASE64       — (optional) base64-encoded release keystore
 # ---------------------------------------------------------------------------
 
 name: Staging Build
@@ -24,7 +32,7 @@ on:
       - '**.md'
       - 'documentations/**'
       - '.github/**'
-      - '!.github/workflows/staging.yml'
+      - '!.github/workflows/staging.yaml'
   workflow_dispatch:
     inputs:
       upload:
@@ -209,10 +217,10 @@ jobs:
             exit 1
           fi
           APK_DIR=$(dirname "$APK_PATH")
-          echo "APK=$APK_DIR"       >> "$GITHUB_ENV"
-          echo "APK_FILE=$APK_PATH" >> "$GITHUB_ENV"
-          echo "apk=$APK_DIR"       >> "$GITHUB_OUTPUT"
-          echo "apk_file=$APK_PATH" >> "$GITHUB_OUTPUT"
+          echo "APK=$APK_DIR"         >> "$GITHUB_ENV"
+          echo "APK_FILE=$APK_PATH"   >> "$GITHUB_ENV"
+          echo "apk=$APK_DIR"         >> "$GITHUB_OUTPUT"
+          echo "apk_file=$APK_PATH"   >> "$GITHUB_OUTPUT"
           echo "Built: $APK_PATH ($(stat -c%s "$APK_PATH") bytes)"
 
       - name: Generate APK checksums
@@ -325,7 +333,7 @@ jobs:
 
           LAST_SHA=$(curl -s -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $GITHUB_TOKEN" \
-            "https://api.github.com/repos/$REPO/actions/workflows/staging.yml/runs?status=completed&conclusion=success&branch=$BRANCH&per_page=1" \
+            "https://api.github.com/repos/$REPO/actions/workflows/staging.yaml/runs?status=completed&conclusion=success&branch=$BRANCH&per_page=1" \
             | jq -r '.workflow_runs[0].head_sha // empty')
 
           COMMIT_TEXT=""
@@ -405,10 +413,10 @@ jobs:
             python -m pip install --upgrade pip
             python -m pip install -r Tools/scripts/requirements.txt
             python Tools/scripts/upload.py \
-              "${{ secrets.HELPER_BOT_TOKEN }}" \
-              "${{ secrets.HELPER_BOT_TARGET }}" \
+              "${{ secrets.BOT_TOKEN }}" \
+              "${{ secrets.REALEASE_UPLOAD_ID }}" \
               test \
-              "${{ secrets.HELPER_BOT_CANARY_TARGET }}"
+              "${{ secrets.CANARY_UPLOAD_ID }}"
           else
             echo "Telegram upload script not found; skipping upload."
           fi
@@ -432,8 +440,8 @@ jobs:
 
       - name: Send log archive to Telegram
         env:
-          TG_BOT_TOKEN:   ${{ secrets.HELPER_BOT_TOKEN }}
-          TG_CHAT_ID:     ${{ secrets.HELPER_BOT_TARGET }}
+          TG_BOT_TOKEN:   ${{ secrets.BOT_TOKEN }}
+          TG_CHAT_ID:     ${{ secrets.REALEASE_UPLOAD_ID }}
           COMMIT_ID:      ${{ github.sha }}
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
           RUN_URL:        ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

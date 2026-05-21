@@ -6,6 +6,9 @@
 # GitHub Actions artifact for manual download / review.
 #
 # Lint and unit tests run here (skipped in the release pipeline).
+#
+# Required secrets
+#   * LOCAL_PROPERTIES      — base64-encoded local.properties (APP_ID, APP_HASH)
 # ---------------------------------------------------------------------------
 
 name: Pull Request CI
@@ -17,7 +20,7 @@ on:
       - '**.md'
       - 'documentations/**'
       - '.github/**'
-      - '!.github/workflows/pr.yml'
+      - '!.github/workflows/pr.yaml'
 
 concurrency:
   group: pr-build-${{ github.event.pull_request.number }}
@@ -151,8 +154,8 @@ jobs:
             exit 1
           fi
           APK_DIR=$(dirname "$APK_PATH")
-          echo "APK=$APK_DIR"       >> "$GITHUB_ENV"
-          echo "APK_FILE=$APK_PATH" >> "$GITHUB_ENV"
+          echo "APK=$APK_DIR"         >> "$GITHUB_ENV"
+          echo "APK_FILE=$APK_PATH"   >> "$GITHUB_ENV"
           echo "Built: $APK_PATH ($(stat -c%s "$APK_PATH") bytes)"
 
       - name: Upload debug artifact
