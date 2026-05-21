@@ -18,3 +18,27 @@ id = "8iZ56xiwmA7Ttb1cxSV-m"
 uri = "file://workflow-exports/staging.yml"
 type = "unspecified"
 title = "staging.yml — Workflow Staging Build"
+
+[[outputs]]
+id = "aMtyPAjeK3O70dGTsdsPD"
+uri = "file://workflows.update/release.yaml"
+type = "unspecified"
+title = "release.yaml"
+
+[[outputs]]
+id = "TazWhqrot-tH50I64tGjA"
+uri = "file://workflows.update/canary.yaml"
+type = "unspecified"
+title = "canary.yaml"
+
+[[outputs]]
+id = "XZ2SRfYcYtN4yawCSeJE2"
+uri = "file://workflows.update/staging.yaml"
+type = "unspecified"
+title = "staging.yaml"
+
+[[outputs]]
+id = "cAs8QseVQAB14lMNV9A8X"
+uri = "file://workflows.update/pr.yaml"
+type = "unspecified"
+title = "pr.yaml"

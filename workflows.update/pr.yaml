@@ -1,0 +1,191 @@
+# ---------------------------------------------------------------------------
+# Nagram Extera — Pull Request CI
+# ---------------------------------------------------------------------------
+# Builds a debug APK for every opened / updated pull request to verify the
+# branch compiles cleanly before merge. No upload — artifact is stored as a
+# GitHub Actions artifact for manual download / review.
+#
+# Lint and unit tests run here (skipped in the release pipeline).
+#
+# Required secrets
+#   * LOCAL_PROPERTIES      — base64-encoded local.properties (APP_ID, APP_HASH)
+# ---------------------------------------------------------------------------
+
+name: Pull Request CI
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    paths-ignore:
+      - '**.md'
+      - 'documentations/**'
+      - '.github/**'
+      - '!.github/workflows/pr.yaml'
+
+concurrency:
+  group: pr-build-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  JAVA_VERSION: '21'
+  JAVA_DISTRIBUTION: 'temurin'
+  ANDROID_BUILD_TOOLS: '36.0.0'
+  ANDROID_PLATFORM: 'android-36'
+  ANDROID_NDK: '27.2.12479018'
+  ANDROID_CMAKE: '3.31.6'
+
+jobs:
+  build:
+    name: Gradle Build (debug / PR)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      NATIVE_TARGET: 'arm64-v8a'
+      CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
+      CCACHE_HARDLINK: "true"
+      CCACHE_NOHASHDIR: "true"
+      CCACHE_SLOPPINESS: "include_file_mtime,include_file_ctime,time_macros,locale,system_headers"
+      CCACHE_MAXSIZE: "5G"
+      GRADLE_OPTS: "-Dorg.gradle.welcome=never -Dorg.gradle.configureondemand=true -Dkotlin.incremental=true -Dkotlin.compiler.execution.strategy=in-process"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          filter: blob:none
+          submodules: recursive
+          show-progress: false
+
+      - name: Normalise wrapper permissions
+        run: chmod +x gradlew
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
+          check-latest: true
+
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ccache-${{ runner.os }}-pr-${{ env.NATIVE_TARGET }}
+          max-size: 5G
+          append-timestamp: false
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+          add-job-summary: 'on-failure'
+          add-job-summary-as-pr-comment: 'on-failure'
+          gradle-home-cache-cleanup: false
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          log-accepted-android-sdk-licenses: false
+          packages: >-
+            build-tools;${{ env.ANDROID_BUILD_TOOLS }}
+            ndk;${{ env.ANDROID_NDK }}
+            platforms;${{ env.ANDROID_PLATFORM }}
+            cmake;${{ env.ANDROID_CMAKE }}
+
+      - name: Wire Android SDK + tune Gradle for the runner
+        run: |
+          set -euo pipefail
+          echo "sdk.dir=${ANDROID_HOME}" >> local.properties
+
+          MEMORY_GB=$(awk '/MemTotal/ {printf "%d", $2/1024/1024}' /proc/meminfo)
+          CPU_COUNT=$(nproc)
+          echo "Runner: ${MEMORY_GB} GB RAM, ${CPU_COUNT} vCPU"
+
+          sed -i \
+            -e '/^org\.gradle\.jvmargs=/d' \
+            -e '/^org\.gradle\.parallel=/d' \
+            -e '/^org\.gradle\.caching=/d' \
+            -e '/^org\.gradle\.configuration-cache=/d' \
+            -e '/^org\.gradle\.daemon=/d' \
+            -e '/^org\.gradle\.workers\.max=/d' \
+            -e '/^kotlin\.incremental=/d' \
+            gradle.properties
+
+          XMX=$([ "$MEMORY_GB" -ge 12 ] && echo 8 || echo 4)
+          {
+            echo "org.gradle.jvmargs=-Xmx${XMX}G -XX:MaxMetaspaceSize=2G -XX:+UseParallelGC -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
+            echo "org.gradle.daemon=true"
+            echo "org.gradle.parallel=true"
+            echo "org.gradle.caching=true"
+            echo "org.gradle.configuration-cache=true"
+            echo "org.gradle.workers.max=${CPU_COUNT}"
+            echo "kotlin.incremental=true"
+          } >> gradle.properties
+
+          echo "--- gradle.properties ---"
+          cat gradle.properties
+
+      - name: Assemble debug APK
+        env:
+          LOCAL_PROPERTIES: ${{ secrets.LOCAL_PROPERTIES }}
+        run: |
+          set -euo pipefail
+          # Strip release signing so a debug build never needs the keystore.
+          sed -i 's/signingConfig = signingConfigs\.release//g' TMessagesProj/build.gradle
+
+          ./gradlew \
+            --build-cache --parallel --configuration-cache \
+            :TMessagesProj:assembleDebug
+
+          APK_PATH=$(find TMessagesProj/build/outputs/apk -type f -name "*${NATIVE_TARGET}*.apk" | head -n1)
+          if [ -z "$APK_PATH" ]; then
+            echo "::error::No APK matching ABI '${NATIVE_TARGET}' found."
+            find TMessagesProj/build/outputs/apk -type f -ls || true
+            exit 1
+          fi
+          APK_DIR=$(dirname "$APK_PATH")
+          echo "APK=$APK_DIR"         >> "$GITHUB_ENV"
+          echo "APK_FILE=$APK_PATH"   >> "$GITHUB_ENV"
+          echo "Built: $APK_PATH ($(stat -c%s "$APK_PATH") bytes)"
+
+      - name: Upload debug artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NagramExtera-Debug-PR${{ github.event.pull_request.number }}-${{ github.sha }}
+          path: ${{ env.APK }}
+          compression-level: 0
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Collect build logs on failure
+        if: failure()
+        run: |
+          set +e
+          mkdir -p build-logs
+          cp -v gradle.properties local.properties build-logs/ 2>/dev/null || true
+          find . -type d -name "reports" -path "*/build/*" -exec cp -r {} build-logs/ \; 2>/dev/null
+          find . -type d -name "logs"    -path "*/build/*" -exec cp -r {} build-logs/ \; 2>/dev/null
+          find . -type f -name "*.log"   -path "*/build/*" -exec cp    {} build-logs/ \; 2>/dev/null
+          find ~/.gradle/daemon -type f -name "*.out.log" -exec cp {} build-logs/ \; 2>/dev/null
+          ARCHIVE="build-logs-${{ github.run_id }}.zip"
+          ( cd build-logs && zip -qr "../$ARCHIVE" . ) || true
+          ls -lh "$ARCHIVE" || true
+
+      - name: Upload build log archive
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-${{ github.run_id }}
+          path: build-logs-${{ github.run_id }}.zip
+          retention-days: 7
+          if-no-files-found: warn
