@@ -5,7 +5,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [1.0.1] — 2026-05-22
+## [Unreleased]
+
+### Fixes & Improvements | 2026-05-22
+
+- **Settings label consistency** — unified the in-app wording from `N-Settings` to `Na Settings` across resource strings in `TMessagesProj/src/main/res/values/strings_na.xml`, `strings_nax.xml`, and `strings_neko.xml`.
+- **Zalgo filter notice** — corrected the display/encoding of the Zalgo filter warning text in `TMessagesProj/src/main/res/values/strings_na.xml` so the symbol removal description renders cleanly.
+
+---
+
+## [1.0.1] | 2026-05-22
 
 ### Fixes & Improvements
 
@@ -38,7 +47,7 @@ opens the new screen.
 
 ---
 
-## [1.0.0] — 2026-05-22
+## [1.0.0] | 2026-05-22
 
 ### Initial Release — Nagram Extera
 
