@@ -5,7 +5,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [1.0.1] — 2025-05-21
+## [1.0.1] — 2026-05-22
 
 ### Fixes & Improvements
 
@@ -38,7 +38,7 @@ opens the new screen.
 
 ---
 
-## [1.0.0] — 2025-05-21
+## [1.0.0] — 2026-05-22
 
 ### Initial Release — Nagram Extera
 
