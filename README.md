@@ -10,7 +10,7 @@ from the best of every major fork.**
 [![Target SDK](https://img.shields.io/badge/target%20SDK-36-3DDC84?style=flat-square&logo=android&logoColor=white)](#)
 [![JVM](https://img.shields.io/badge/JVM-21-007396?style=flat-square&logo=openjdk&logoColor=white)](#)
 [![Gradle](https://img.shields.io/badge/Gradle-8.x-02303A?style=flat-square&logo=gradle&logoColor=white)](#)
-[![License](https://img.shields.io/badge/license-GPL--2.0-blue?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/license-GPL--3.0-blue?style=flat-square)](LICENSE)
 
 </div>
 
@@ -58,7 +58,7 @@ that does its own bookkeeping.
 | **Languages** | Java + Kotlin (JVM 21) |
 | **Toolchain** | Gradle 8.x · AGP 9.1 · NDK 27.2 · CMake 3.31 |
 | **Module layout** | Single Android module — `:TMessagesProj` |
-| **License** | [GPL-2.0](LICENSE) |
+| **License** | [GPL-3.0](LICENSE) |
 
 ## Quick start
 
@@ -138,6 +138,6 @@ public group.
 
 ## License
 
-This project is distributed under the [GNU General Public License v2.0](LICENSE).
+This project is distributed under the [GNU General Public License v3.0](LICENSE).
 By contributing you agree your changes ship under the same terms, in line with
 upstream Telegram for Android.
