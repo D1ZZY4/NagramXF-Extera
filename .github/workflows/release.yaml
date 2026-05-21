@@ -2,15 +2,8 @@
 # Nagram Extera — Release pipeline
 # ---------------------------------------------------------------------------
 # Builds a signed arm64-v8a release APK, archives it as a workflow artifact,
-# and (optionally) publishes it to the configured Telegram release channel.
-#
-# Performance posture
-#   * Single-ABI build (arm64-v8a) by default — no universal APK.
-#   * Gradle daemon ON, configuration-cache ON, build-cache ON, parallel ON.
-#   * setup-gradle handles dependency + build cache (no manual ~/.gradle cache).
-#   * ccache wraps the NDK toolchain and persists across runs.
-#   * Lint and unit tests are skipped for release builds (run them in PR CI).
-#   * Partial git clone (blobless) — fetched in full only for versionCode.
+# publishes it to the configured Telegram release channel, and creates a
+# GitHub Release with the APK attached.
 #
 # Triggers
 #   * push to `main`         — full build + publish
@@ -58,7 +51,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
   actions: read
 
 defaults:
@@ -269,10 +262,10 @@ jobs:
           if-no-files-found: warn
 
   # ---------------------------------------------------------------------------
-  # 2. Publish to Telegram (release channel)
+  # 2. Publish to Telegram (release channel) + GitHub Release
   # ---------------------------------------------------------------------------
   upload:
-    name: Publish to Telegram
+    name: Publish to Telegram + GitHub Release
     needs: build
     if: |
       success()
@@ -339,8 +332,71 @@ jobs:
             echo "Telegram upload script not found; skipping upload."
           fi
 
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.build.outputs.version_name }}
+          name: Nagram Extera v${{ needs.build.outputs.version_name }}
+          body: |
+            **Nagram Extera** — Release build
+
+            | Field | Value |
+            |---|---|
+            | Version | `${{ needs.build.outputs.version_name }}` |
+            | Version Code | `${{ needs.build.outputs.version_code }}` |
+            | Commit | [`${{ needs.build.outputs.short_sha }}`](${{ github.event.head_commit.url }}) |
+            | Branch | `main` |
+
+            **Commit message:**
+            ${{ github.event.head_commit.message }}
+
+            ---
+            Download the APK below and install it on your Android device (Android 8.0+, arm64-v8a).
+          files: ${{ steps.locate.outputs.apk }}
+          draft: false
+          prerelease: false
+          make_latest: true
+          generate_release_notes: false
+
   # ---------------------------------------------------------------------------
-  # 3. Failure-mode log shipping
+  # 3. Auto-increment version code after successful release
+  # ---------------------------------------------------------------------------
+  version-bump:
+    name: Bump APP_VERSION_CODE
+    needs: [build, upload]
+    if: success() && github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Increment APP_VERSION_CODE
+        id: bump
+        run: |
+          set -euo pipefail
+          CURRENT=$(grep -E '^APP_VERSION_CODE=' gradle.properties | cut -d= -f2)
+          NEW=$((CURRENT + 1))
+          sed -i "s/^APP_VERSION_CODE=.*/APP_VERSION_CODE=${NEW}/" gradle.properties
+          echo "prev=${CURRENT}" | tee -a "$GITHUB_OUTPUT"
+          echo "next=${NEW}"     | tee -a "$GITHUB_OUTPUT"
+
+      - name: Commit and push
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add gradle.properties
+          git diff --cached --quiet && { echo "Nothing to commit."; exit 0; }
+          git commit -m "ci: bump APP_VERSION_CODE ${{ steps.bump.outputs.prev }} → ${{ steps.bump.outputs.next }} [skip ci]"
+          git push
+
+  # ---------------------------------------------------------------------------
+  # 4. Failure-mode log shipping
   # ---------------------------------------------------------------------------
   upload-logs:
     name: Ship build logs to Telegram

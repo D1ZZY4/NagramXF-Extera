@@ -1,8 +1,9 @@
 # ---------------------------------------------------------------------------
 # Nagram Extera — Canary pipeline
 # ---------------------------------------------------------------------------
-# Builds a signed arm64-v8a staging APK from the `canary` branch and
-# (optionally) publishes it to the configured Telegram canary channel.
+# Builds a signed arm64-v8a staging APK from the `canary` branch,
+# publishes it to the configured Telegram canary channel, and creates a
+# GitHub pre-release with the APK attached.
 # Includes AI-powered commit summarisation via GitHub Models.
 #
 # Triggers
@@ -50,7 +51,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
   actions: read
   models: read
 
@@ -262,10 +263,10 @@ jobs:
           if-no-files-found: warn
 
   # ---------------------------------------------------------------------------
-  # 2. Publish to Telegram (canary channel)
+  # 2. Publish to Telegram (canary channel) + GitHub Pre-Release
   # ---------------------------------------------------------------------------
   upload:
-    name: Publish to Telegram (canary)
+    name: Publish to Telegram (canary) + GitHub Pre-Release
     needs: build
     if: |
       success()
@@ -419,6 +420,31 @@ jobs:
           else
             echo "Telegram upload script not found; skipping upload."
           fi
+
+      - name: Create GitHub Pre-Release (canary)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.build.outputs.version_name }}
+          name: Nagram Extera v${{ needs.build.outputs.version_name }}
+          body: |
+            **Nagram Extera** — Canary build ⚠️ *This is an experimental pre-release. Use at your own risk.*
+
+            | Field | Value |
+            |---|---|
+            | Version | `${{ needs.build.outputs.version_name }}` |
+            | Version Code | `${{ needs.build.outputs.version_code }}` |
+            | Commit | [`${{ needs.build.outputs.short_sha }}`](${{ github.event.head_commit.url }}) |
+            | Branch | `canary` |
+
+            **Commit message:**
+            ${{ github.event.head_commit.message }}
+
+            ---
+            Download the APK below and install it on your Android device (Android 8.0+, arm64-v8a).
+          files: ${{ steps.locate.outputs.apk }}
+          draft: false
+          prerelease: true
+          make_latest: false
 
   # ---------------------------------------------------------------------------
   # 3. Failure-mode log shipping
