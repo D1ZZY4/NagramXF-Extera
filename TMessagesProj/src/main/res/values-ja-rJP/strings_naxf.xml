@@ -289,4 +289,8 @@
     <string name="HideAiEditor">AIエディタを非表示</string>
     <string name="HideAiSummary">AI要約を非表示</string>
     <string name="AiHideHeader">AI機能を非表示</string>
+
+    <!-- 添付カメラ -->
+    <string name="MoveAttachCameraToBottom">下部カメラショートカット</string>
+    <string name="MoveAttachCameraToBottomNotice">ギャラリーグリッドの代わりに、下部の添付バーにカメラを表示します。</string>
 </resources>

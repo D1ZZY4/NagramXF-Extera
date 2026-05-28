@@ -268,4 +268,8 @@
     <string name="AIError502Info">The server is temporarily unavailable.</string>
     <string name="AIError503">Service Unavailable</string>
     <string name="AIError503Info">The service is overloaded. Try again later.</string>
+
+    <!-- Attach Camera -->
+    <string name="MoveAttachCameraToBottom">Bottom Camera Shortcut</string>
+    <string name="MoveAttachCameraToBottomNotice">Show the camera in the bottom attachment bar instead of the gallery grid.</string>
 </resources>

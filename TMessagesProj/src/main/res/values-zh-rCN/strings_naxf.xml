@@ -259,4 +259,8 @@
     <string name="AIError502Info">服务器暂时不可用。</string>
     <string name="AIError503">服务不可用</string>
     <string name="AIError503Info">服务过载，请稍后重试。</string>
+
+    <!-- 附件相机 -->
+    <string name="MoveAttachCameraToBottom">底部相机快捷入口</string>
+    <string name="MoveAttachCameraToBottomNotice">在底部附件栏显示相机入口，而不是显示在相册网格中。</string>
 </resources>

@@ -287,4 +287,8 @@
     <string name="HideAiEditor">Скрыть AI-редактор</string>
     <string name="HideAiSummary">Скрыть AI-сводку</string>
     <string name="AiHideHeader">Скрыть AI-функции</string>
+
+    <!-- Камера вкладки -->
+    <string name="MoveAttachCameraToBottom">Камера в нижней панели</string>
+    <string name="MoveAttachCameraToBottomNotice">Показывать камеру на нижней панели вложений вместо сетки галереи.</string>
 </resources>
