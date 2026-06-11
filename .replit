@@ -1,7 +1,0 @@
-modules = ["java-graalvm22.3", "go-1.21"]
-[agent]
-expertMode = true
-stack = "BEST_EFFORT_FALLBACK"
-
-[nix]
-channel = "stable-25_05"
