@@ -30,6 +30,18 @@ object NaConfig {
             if (initialized) return
             if (ApplicationLoader.applicationContext == null) return
 
+            if (getPreferences().contains("IgnoreUnreadCount")) {
+                try {
+                    getPreferences().getBoolean("IgnoreUnreadCount", false)
+                } catch (_: Exception) {
+                    val legacyInt = getPreferences().getInt("IgnoreUnreadCount", 0)
+                    getPreferences().edit {
+                        remove("IgnoreUnreadCount")
+                        putBoolean("IgnoreUnreadCount", legacyInt == NekoConfig.DIALOG_FILTER_EXCLUDE_ALL)
+                    }
+                }
+            }
+
             loadConfig(false)
             updatePreferredTranslateTargetLangList()
             fixConfig()
@@ -581,11 +593,17 @@ object NaConfig {
         addConfig(
             "UseSystemAiService",
             ConfigItem.configTypeBool,
-            true
+            false
         )
-    val disableAiFeatures =
+    val hideAiEditor =
         addConfig(
-            "DisableAiFeatures",
+            "HideAiEditor",
+            ConfigItem.configTypeBool,
+            false
+        )
+    val hideAiSummary =
+        addConfig(
+            "HideAiSummary",
             ConfigItem.configTypeBool,
             false
         )
@@ -1143,6 +1161,12 @@ object NaConfig {
             ConfigItem.configTypeBool,
             false
         )
+    val messageColoredBackground =
+        addConfig(
+            "MessageColoredBackground",
+            ConfigItem.configTypeBool,
+            true
+        )
     val removeMessageTail =
         addConfig(
             "RemoveMessageTail",
@@ -1315,7 +1339,7 @@ object NaConfig {
         addConfig(
             "IconReplacements",
             ConfigItem.configTypeInt,
-            0
+            1
         )
     val showCopyAsSticker =
         addConfig(
@@ -1495,19 +1519,19 @@ object NaConfig {
         addConfig(
             "SwitchStyle",
             ConfigItem.configTypeInt,
-            0 // 0: default; 1: MD3; 2: OneUI
+            1 // 0: default; 1: MD3; 2: OneUI
         )
     val sliderStyle =
         addConfig(
             "SliderStyle",
             ConfigItem.configTypeInt,
-            0 // 0: default; 1: Modern; 2: MD3
+            2 // 0: default; 1: Modern; 2: MD3
         )
     val ignoreUnreadCount =
         addConfig(
             "IgnoreUnreadCount",
-            ConfigItem.configTypeInt,
-            getIgnoreMutedCountLegacy()
+            ConfigItem.configTypeBool,
+            false
         )
     val markdownParser =
         addConfig(
@@ -1659,6 +1683,30 @@ object NaConfig {
             ConfigItem.configTypeBool,
             false
         )
+    val strokeOnViews =
+        addConfig(
+            "StrokeOnViews",
+            ConfigItem.configTypeBool,
+            true
+        )
+    val hideBottomNavigationBar =
+        addConfig(
+            "HideBottomNavigationBar",
+            ConfigItem.configTypeBool,
+            false
+        )
+    val hideDialogsSearchField =
+        addConfig(
+            "HideDialogsSearchField",
+            ConfigItem.configTypeBool,
+            false
+        )
+    val deepLTranslateKey =
+        addConfig(
+            "DeepLTranslateKey",
+            ConfigItem.configTypeString,
+            ""
+        )
 
     val preferredTranslateTargetLangList = ArrayList<String>()
     fun updatePreferredTranslateTargetLangList() {
@@ -1677,19 +1725,7 @@ object NaConfig {
         }, 1000)
     }
 
-    private fun getIgnoreMutedCountLegacy(): Int {
-        return when {
-            getPreferences().getBoolean(
-                "IgnoreFolderCount", false
-            ) -> NekoConfig.DIALOG_FILTER_EXCLUDE_ALL
 
-            getPreferences().getBoolean(
-                "IgnoreMutedCount", true
-            ) -> NekoConfig.DIALOG_FILTER_EXCLUDE_MUTED
-
-            else -> NekoConfig.DIALOG_FILTER_EXCLUDE_NONE
-        }
-    }
 
     private fun fixConfig() {
         if (ApplicationLoader.applicationContext == null) {

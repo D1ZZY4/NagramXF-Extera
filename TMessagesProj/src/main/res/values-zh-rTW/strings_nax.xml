@@ -113,6 +113,8 @@
     <string name="ResetSettingsAlert">您確定要重置所有 N-設定 嗎？</string>
     <string name="DontAutoPlayNextVoice">停用自動播放下一條語音訊息</string>
     <string name="SaveToChatSubfolder">按聊天名稱儲存附件</string>
+    <string name="MessageColoredBackground">多彩訊息背景</string>
+    <string name="ColoredBackgroundNotice">回覆、引用、連結預覽的背景色和 Emoji。</string>
     <string name="ChatMenu">聊天選單</string>
     <string name="MediaViewerMenu">媒體檢視器選單</string>
     <string name="MenuAndButtons">菜單和按鈕</string>
@@ -210,6 +212,9 @@
     <string name="GroupedMessageMenu">分組訊息選單</string>
     <string name="GroupedMessageMenuNotice">將主要操作選項移至訊息選單的底部。</string>
     <string name="CopySticker">複製貼圖</string>
+    <string name="NaxAboutInfo">資訊</string>
+    <string name="NaxLinks">連結</string>
+    <string name="NaxAboutDesc">Nagram X 的分支，包含額外功能。融合了 exteraGram 和 AyuGram 的大部分特性。</string>
     <string name="CheckUpdate">檢查更新</string>
     <string name="AutoCheckUpdateOFF">停用</string>
     <string name="AutoCheckUpdateSwitch">更新通道</string>

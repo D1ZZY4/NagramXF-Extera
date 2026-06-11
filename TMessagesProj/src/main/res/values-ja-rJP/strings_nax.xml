@@ -112,6 +112,8 @@
     <string name="ResetSettingsAlert">「N-設定」をリセットしますか？</string>
     <string name="DontAutoPlayNextVoice">次のボイスメッセージを自動再生しない</string>
     <string name="SaveToChatSubfolder">チャット別にファイルを保存</string>
+    <string name="MessageColoredBackground">カラフルなメッセージ背景</string>
+    <string name="ColoredBackgroundNotice">返信、引用、リンクプレビューの背景色と絵文字。</string>
     <string name="ChatMenu">チャットメニュー</string>
     <string name="MediaViewerMenu">メディアビューアーメニュー</string>
     <string name="MenuAndButtons">メニューとボタン</string>
@@ -209,6 +211,9 @@
     <string name="GroupedMessageMenu">メッセージメニューをグループ化</string>
     <string name="GroupedMessageMenuNotice">グループ化すると、メインアクションがメッセージメニューの下部に移動します。</string>
     <string name="CopySticker">ステッカーをコピー</string>
+    <string name="NaxAboutInfo">情報</string>
+    <string name="NaxLinks">リンク</string>
+    <string name="NaxAboutDesc">追加機能を備えた Nagram X のフォーク。exteraGram と AyuGram の大部分の機能を含みます。</string>
     <string name="CheckUpdate">アップデートを確認</string>
     <string name="AutoCheckUpdateOFF">オフ</string>
     <string name="AutoCheckUpdateSwitch">更新チャネル</string>

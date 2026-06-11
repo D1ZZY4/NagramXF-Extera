@@ -1,5 +1,38 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Pillstack -->
+    <string name="PillStackPills">膠囊棧</string>
+    <string name="PillStackPillsInfo">在搜尋欄中顯示互動式膠囊</string>
+    <string name="PillStackActivePills">已啟用的膠囊</string>
+    <string name="PillStackHiddenPills">已隱藏的膠囊</string>
+    <string name="PillStackPillsSettingsInfo">點擊膠囊切換顯示狀態。長按拖拽可排序。</string>
+    <string name="PillStackInfiniteScrolling">無限捲動</string>
+    <string name="WeatherPill">天氣</string>
+    <string name="WeatherPillTopInfo">在搜尋欄旁顯示天氣膠囊，展示當前位置的溫度和天氣狀況。</string>
+    <string name="WeatherLocation">位置</string>
+    <string name="WeatherSettingsInfo">開啟對話列表時重新整理天氣。點擊膠囊可快速操作。</string>
+    <string name="WeatherLocationPermissionGrant">授予位置權限</string>
+    <string name="WeatherLocationPermissionNo">允許位置存取以取得當前位置的天氣。</string>
+    <string name="WeatherLocationServicesEnable">啟用位置服務</string>
+    <string name="CurrentLocation">目前位置</string>
+    <string name="SelectLocation">選擇位置</string>
+    <string name="CryptoPillTargetCurrency">目標貨幣</string>
+    <string name="CryptoCurrencyUsd">美元</string>
+    <string name="CryptoCurrencyEur">歐元</string>
+    <string name="CryptoCurrencyRub">盧布</string>
+    <string name="CryptoCurrencyGbp">英鎊</string>
+    <string name="CryptoCurrencyKzt">堅戈</string>
+    <string name="CryptoCurrencyTry">里拉</string>
+    <string name="CryptoCurrencyUah">格里夫納</string>
+    <string name="CryptoCurrencyPln">茲羅提</string>
+    <string name="CryptoCurrencyAed">迪拉姆</string>
+    <string name="CryptoCurrencyCny">人民幣</string>
+    <string name="CryptoCurrencyJpy">日圓</string>
+    <string name="CryptoCurrencyByn">白俄羅斯盧布</string>
+    <string name="CryptoCurrencyIls">新謝克爾</string>
+    <string name="CryptoCurrencyCzk">克朗</string>
+    <string name="CryptoCurrencyInr">印度盧比</string>
+
     <string name="RegexFiltersMaskMessages">將過濾或被封鎖的訊息遮罩而不是隱藏</string>
     <string name="SquareFloatingButton">方形浮動按鈕</string>
     <string name="SeparateHeaders">分離標題</string>
@@ -9,8 +42,9 @@
     <string name="RegexFiltersMaskMessagesAbout">過濾或被屏蔽的消息會以遮罩占位形式保留在聊天中，而不是直接隱藏。</string>
     <string name="UseSystemAiService">使用系統 AI 服務</string>
     <string name="UseSystemAiServiceDesc">當前僅支持 HyperOS 和 ColorOS</string>
-    <string name="DisableAiFeatures">停用 AI 功能</string>
-    <string name="DisableAiFeaturesNotice">隱藏訊息 AI 摘要按鈕和輸入框中的 AI 編輯器。</string>
+    <string name="HideAiEditor">隱藏 AI 編輯器</string>
+    <string name="HideAiSummary">隱藏 AI 摘要</string>
+    <string name="AiHideHeader">隱藏 AI 功能</string>
     <string name="RegexFiltersListEmpty">還沒有過濾器，點擊 + 新增一個。</string>
     <string name="RegexFiltersShadowBanEmpty">還沒有靜默屏蔽對象，點擊 + 新增一個。</string>
     <string name="RegexFiltersFilterEnabled">啟用過濾器</string>
@@ -50,6 +84,7 @@
     <string name="BlurOptions">模糊選項</string>
     <string name="AyuSpySettings">間諜設定</string>
     <string name="AyuMomentsCustomHeader">自定義</string>
+    <string name="AyuMomentsPreviewMessage">盡人事，聽天命</string>
     <string name="SingleCornerRadius">統一圓角半徑</string>
     <string name="SingleCornerRadiusInfo">話題群組會採用與聊天訊息相同的頭像形狀。</string>
     <string name="PeekOnlineMenuText">在線預覽</string>
@@ -192,4 +227,73 @@
     <string name="VideoMessagesCameraFront">前鏡頭</string>
     <string name="VideoMessagesCameraRear">後鏡頭</string>
     <string name="VideoMessagesCameraAsk">先詢問</string>
+
+    <!-- AI Chat -->
+    <string name="AIChat">AI 聊天</string>
+    <string name="AIChatInfo">設定服務、角色與歷史記錄</string>
+    <string name="AIChatServices">服務</string>
+    <string name="AIChatRoles">角色</string>
+    <string name="AIChatMessageHistory">訊息歷史</string>
+    <string name="AIChatHistoryInfo">啟用後，AI 將記住對話中的先前訊息。</string>
+    <string name="AIChatOther">其他</string>
+    <string name="AIChatResponseStreaming">串流回應</string>
+    <string name="AIChatResponseStreamingInfo">即時顯示 AI 產生的回應。</string>
+    <string name="AIChatShowResponseOnly">僅顯示回應</string>
+    <string name="AIChatInsertAsQuote">以引言形式插入回應</string>
+    <string name="AIChatNotConfigured">未設定</string>
+    <string name="AIChatAddService">新增服務</string>
+    <string name="AIChatAddServiceHint">點擊新增 AI 服務端點</string>
+    <string name="AIChatSendPopupHint">點擊**新增 API 金鑰**以開始使用 AI 功能。</string>
+    <string name="AIChatServicesInfo">新增你的 AI 服務端點。點擊設為預設，長按編輯或刪除。</string>
+    <string name="AIChatNewService">新建服務</string>
+    <string name="AIChatEditService">編輯服務</string>
+    <string name="AIChatServiceURL">服務 URL</string>
+    <string name="AIChatServiceModel">模型</string>
+    <string name="AIChatServiceKey">API 金鑰</string>
+    <string name="AIChatProtocol">協定</string>
+    <string name="AIChatProvider">渠道</string>
+    <string name="AIChatCustomProviderInfo">輸入自訂的 OpenAI 相容端點</string>
+    <string name="AIChatFetchModels">取得模型清單</string>
+    <string name="AIChatTestConnection">測試連線</string>
+    <string name="AIChatTestSuccess">連線成功</string>
+    <string name="AIChatAddRole">新增角色</string>
+    <string name="AIChatAddRoleHint">點擊新增自訂角色</string>
+    <string name="AIChatRolesInfo">角色定義 AI 的個性與行為。</string>
+    <string name="AIChatSuggestedRoles">推薦</string>
+    <string name="AIChatCustomRoles">自訂</string>
+    <string name="AIChatNewRole">新建角色</string>
+    <string name="AIChatEditRole">編輯角色</string>
+    <string name="AIChatRoleName">名稱</string>
+    <string name="AIChatRolePrompt">系統提示詞</string>
+    <string name="AIChatPromptHint">提示詞</string>
+    <string name="AIChatProceed">繼續</string>
+    <string name="AIChatGenerate">產生</string>
+    <string name="AIChatGenerateFromMessage">從訊息產生</string>
+    <string name="AIChatSelected">已選擇</string>
+    <string name="ClearConversationHistoryInfo">確定要清除 AI 對話歷史記錄嗎？</string>
+    <string name="AIChatHistoryCleared">歷史記錄已清除</string>
+
+    <!-- AI Error messages -->
+    <string name="AIError">伺服器錯誤</string>
+    <string name="AIErrorInfo">發生未預期的錯誤，請再試一次。</string>
+    <string name="AIError400">請求錯誤</string>
+    <string name="AIError400Info">請求格式錯誤，請檢查你的提示詞。</string>
+    <string name="AIError401">未授權</string>
+    <string name="AIError401Info">無效的 API 金鑰，請檢查服務設定。</string>
+    <string name="AIError402">需要付費</string>
+    <string name="AIError402Info">你的 API 配額已用盡。</string>
+    <string name="AIError403">禁止存取</string>
+    <string name="AIError403Info">存取被拒，請檢查你的 API 權限。</string>
+    <string name="AIError408">逾時</string>
+    <string name="AIError408Info">請求逾時，請稍後再試。</string>
+    <string name="AIError429">速率限制</string>
+    <string name="AIError429Info">請求過於頻繁，請稍候片刻。</string>
+    <string name="AIError502">閘道錯誤</string>
+    <string name="AIError502Info">伺服器暫時無法使用。</string>
+    <string name="AIError503">服務無法使用</string>
+    <string name="AIError503Info">服務超載，請稍後再試。</string>
+
+    <!-- 附件相機 -->
+    <string name="MoveAttachCameraToBottom">底部相機快捷入口</string>
+    <string name="MoveAttachCameraToBottomNotice">在底部附件欄顯示相機入口，而不是顯示在相簿網格中。</string>
 </resources>

@@ -1,5 +1,43 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Pillstack (ported from exteragram/ayuGram) -->
+    <string name="PillStackPills">Pill Stack</string>
+    <string name="PillStackPillsInfo">Display interactive pills in the search field</string>
+    <string name="PillStackActivePills">Active Pills</string>
+    <string name="PillStackHiddenPills">Hidden Pills</string>
+    <string name="PillStackPillsSettingsInfo">Tap a pill to toggle its visibility. Long-press and drag to reorder.</string>
+    <string name="PillStackInfiniteScrolling">Infinite Scrolling</string>
+    <string name="WeatherPill">Weather</string>
+    <string name="WeatherPillTopInfo">Show a weather pill next to the search bar with temperature and conditions at your location.</string>
+    <string name="WeatherLocation">Location</string>
+    <string name="WeatherSettingsInfo">The pill will refresh when you open the dialog list. Tap the pill for quick actions.</string>
+    <string name="WeatherLocationPermissionGrant">Grant Location Permission</string>
+    <string name="WeatherLocationPermissionNo">Allow location access for weather at your current location.</string>
+    <string name="WeatherLocationServicesEnable">Enable Location Services</string>
+    <string name="WeatherPickLocationHint">Tap to pick a location on the map</string>
+    <string name="CryptoPillTargetCurrency">Target currency</string>
+    <string name="CryptoCurrencyUsd">US Dollar</string>
+    <string name="CryptoCurrencyEur">Euro</string>
+    <string name="CryptoCurrencyRub">Russian Ruble</string>
+    <string name="CryptoCurrencyGbp">British Pound</string>
+    <string name="CryptoCurrencyKzt">Kazakhstani Tenge</string>
+    <string name="CryptoCurrencyTry">Turkish Lira</string>
+    <string name="CryptoCurrencyUah">Ukrainian Hryvnia</string>
+    <string name="CryptoCurrencyPln">Polish Zloty</string>
+    <string name="CryptoCurrencyAed">UAE Dirham</string>
+    <string name="CryptoCurrencyCny">Chinese Yuan</string>
+    <string name="CryptoCurrencyJpy">Japanese Yen</string>
+    <string name="CryptoCurrencyByn">Belarusian Ruble</string>
+    <string name="CryptoCurrencyIls">Israeli Shekel</string>
+    <string name="CryptoCurrencyCzk">Czech Koruna</string>
+    <string name="CryptoCurrencyInr">Indian Rupee</string>
+
+    <!-- Missing strings used by pillstack -->
+    <string name="CurrentLocation">Current Location</string>
+    <string name="SelectLocation">Select a Location</string>
+    <string name="NavigationDrawerProxyPingShort">Ping %1$d ms</string>
+    <string name="LastSeenPillAutoRefresh">Auto refresh</string>
+
     <string name="SquareFloatingButton">Square Floating Button</string>
     <string name="SeparateHeaders">Separate Headers</string>
     <string name="RegexFiltersMaskMessages">Mask filtered or blocked messages instead of hiding them</string>
@@ -18,8 +56,9 @@
     <string name="RegexFiltersShadowBannedGroup">Group</string>
     <string name="UseSystemAiService">Use System Ai Service</string>
     <string name="UseSystemAiServiceDesc">Only support HyperOS and ColorOS</string>
-    <string name="DisableAiFeatures">Disable AI Features</string>
-    <string name="DisableAiFeaturesNotice">Hide AI summary buttons and the AI editor in message input fields.</string>
+    <string name="HideAiEditor">Hide AI Editor</string>
+    <string name="HideAiSummary">Hide AI Summary</string>
+    <string name="AiHideHeader">Hide AI Features</string>
     <string name="AyuGramMenu" translatable="false">AyuGram</string>
     <string name="DeletedMarkText">Deleted Mark</string>
     <string name="DeletedMarkNothing">Nothing</string>
@@ -105,6 +144,7 @@
     <string name="SingleCornerRadiusInfo">Topic groups will use the same avatar shape as chat messages.</string>
     <string name="BlurOptions">Blur Options</string>
     <string name="AyuMoments" translatable="false">Ayugram</string>
+    <string name="AyuMomentsPreviewMessage">Do your best, leave the rest to fate</string>
     <string name="NagramExtera" translatable="false">Nagram Extera</string>
     <string name="NagramExteraContents">Contents</string>
     <string name="NagramExteraChannel">Nagram Extera Channel</string>
@@ -174,4 +214,73 @@
     <string name="VideoMessagesCameraFront">Front</string>
     <string name="VideoMessagesCameraRear">Rear</string>
     <string name="VideoMessagesCameraAsk">Ask</string>
+
+    <!-- AI Chat -->
+    <string name="AIChat">AI Chat</string>
+    <string name="AIChatInfo">Setup Services, Roles, and History</string>
+    <string name="AIChatServices">Services</string>
+    <string name="AIChatRoles">Roles</string>
+    <string name="AIChatMessageHistory">Message History</string>
+    <string name="AIChatHistoryInfo">When enabled, the AI will remember previous messages in the conversation.</string>
+    <string name="AIChatOther">Other</string>
+    <string name="AIChatResponseStreaming">Response Streaming</string>
+    <string name="AIChatResponseStreamingInfo">Show AI responses as they are generated in real-time.</string>
+    <string name="AIChatShowResponseOnly">Show Response Only</string>
+    <string name="AIChatInsertAsQuote">Insert Response as Quote</string>
+    <string name="AIChatNotConfigured">Not configured</string>
+    <string name="AIChatAddService">Add Service</string>
+    <string name="AIChatServicesInfo">Add your AI service endpoints. Tap to set as default, long-press to edit or delete.</string>
+    <string name="AIChatNewService">New Service</string>
+    <string name="AIChatEditService">Edit Service</string>
+    <string name="AIChatServiceURL">Service URL</string>
+    <string name="AIChatServiceModel">Model</string>
+    <string name="AIChatServiceKey">API Key</string>
+    <string name="AIChatProtocol">Protocol</string>
+    <string name="AIChatProvider">Provider</string>
+    <string name="AIChatCustomProviderInfo">Enter your own OpenAI-compatible endpoint</string>
+    <string name="AIChatFetchModels">Fetch Models</string>
+    <string name="AIChatTestConnection">Test Connection</string>
+    <string name="AIChatTestSuccess">Connection successful</string>
+    <string name="AIChatAddRole">Add Role</string>
+    <string name="AIChatRolesInfo">Roles define the AI personality and behavior.</string>
+    <string name="AIChatSuggestedRoles">Suggested</string>
+    <string name="AIChatCustomRoles">Custom</string>
+    <string name="AIChatNewRole">New Role</string>
+    <string name="AIChatEditRole">Edit Role</string>
+    <string name="AIChatRoleName">Name</string>
+    <string name="AIChatRolePrompt">System Prompt</string>
+    <string name="AIChatPromptHint">Prompt</string>
+    <string name="AIChatProceed">Proceed</string>
+    <string name="AIChatGenerate">Generate</string>
+    <string name="AIChatGenerateFromMessage">Generate from Message</string>
+    <string name="AIChatAddServiceHint">Tap to add a new AI service endpoint</string>
+    <string name="AIChatSendPopupHint">Tap to **add an API Key** to get started with AI features.</string>
+    <string name="AIChatAddRoleHint">Tap to add a custom role</string>
+    <string name="AIChatSelected">Selected</string>
+    <string name="ClearConversationHistoryInfo">Are you sure you want to clear the AI conversation history?</string>
+    <string name="AIChatHistoryCleared">History cleared</string>
+
+    <!-- AI Error messages -->
+    <string name="AIError">Server Error</string>
+    <string name="AIErrorInfo">An unexpected error occurred. Please try again.</string>
+    <string name="AIError400">Bad Request</string>
+    <string name="AIError400Info">The request was malformed. Check your prompt.</string>
+    <string name="AIError401">Unauthorized</string>
+    <string name="AIError401Info">Invalid API key. Check your service configuration.</string>
+    <string name="AIError402">Payment Required</string>
+    <string name="AIError402Info">Your API quota has been exhausted.</string>
+    <string name="AIError403">Forbidden</string>
+    <string name="AIError403Info">Access denied. Check your API permissions.</string>
+    <string name="AIError408">Timeout</string>
+    <string name="AIError408Info">The request timed out. Try again later.</string>
+    <string name="AIError429">Rate Limited</string>
+    <string name="AIError429Info">Too many requests. Please wait a moment.</string>
+    <string name="AIError502">Bad Gateway</string>
+    <string name="AIError502Info">The server is temporarily unavailable.</string>
+    <string name="AIError503">Service Unavailable</string>
+    <string name="AIError503Info">The service is overloaded. Try again later.</string>
+
+    <!-- Attach Camera -->
+    <string name="MoveAttachCameraToBottom">Bottom Camera Shortcut</string>
+    <string name="MoveAttachCameraToBottomNotice">Show the camera in the bottom attachment bar instead of the gallery grid.</string>
 </resources>

@@ -26,11 +26,13 @@ import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
+import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.ScrollView;
@@ -81,6 +83,7 @@ import org.telegram.ui.SettingsActivity;
 import org.telegram.ui.Stories.StoriesController;
 import org.telegram.ui.Stories.recorder.HintView2;
 
+import java.lang.ref.WeakReference;
 import java.util.HashSet;
 
 public class ItemOptions {
@@ -271,8 +274,33 @@ public class ItemOptions {
     }
 
     public ItemOptions makeSwipeback() {
+        return makeSwipeback(false);
+    }
+
+    public ItemOptions makeSwipeback(boolean scrollable) {
         ItemOptions options = new ItemOptions(lastLayout, resourcesProvider);
-        options.foregroundIndex = lastLayout.addViewToSwipeBack(options.linearLayout);
+        if (scrollable) {
+            android.widget.ScrollView scrollView = new android.widget.ScrollView(lastLayout.getContext()) {
+                @Override
+                protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+                    super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(
+                            Math.min(AndroidUtilities.dp(380), MeasureSpec.getSize(heightMeasureSpec)),
+                            MeasureSpec.getMode(heightMeasureSpec)));
+                }
+            };
+            scrollView.setVerticalScrollBarEnabled(false);
+            scrollView.addView(options.linearLayout, LayoutHelper.createScroll(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP));
+            options.foregroundIndex = lastLayout.addViewToSwipeBack(scrollView);
+        } else {
+            options.foregroundIndex = lastLayout.addViewToSwipeBack(options.linearLayout);
+        }
+        if (lastLayout.getSwipeBack() != null) {
+            lastLayout.getSwipeBack().addOnSwipeBackProgressListener((layout, toProgress, progress) -> {
+                if ((toProgress == 0.0f && progress == 0.0f) || (toProgress == 1.0f && progress == 1.0f)) {
+                    dontDismiss = false;
+                }
+            });
+        }
         return options;
     }
 
@@ -1013,9 +1041,41 @@ public class ItemOptions {
 
     private int minWidthDp;
     private int fixedWidthDp;
+    private boolean flexibleMinWidth;
 
     public ItemOptions setMinWidth(int minWidthDp) {
         this.minWidthDp = minWidthDp;
+        return this;
+    }
+
+    /**
+     * Like {@link #setMinWidth(int)}, but lets items grow wider than {@code minWidthDp}
+     * to fit long text instead of being clamped to a fixed width.
+     */
+    public ItemOptions setMinWidthFlexible(int minWidthDp) {
+        this.minWidthDp = minWidthDp;
+        this.flexibleMinWidth = true;
+        return this;
+    }
+
+    /**
+     * Measures all items at their natural width and sets the layout's minimum width
+     * to the widest item. Call after all items are added.
+     */
+    public ItemOptions fitToContent() {
+        if (lastLayout == null) return this;
+        int maxWidth = dp(minWidthDp > 0 ? minWidthDp : 196);
+        int unspec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+        for (int i = 0; i < lastLayout.getItemsCount(); i++) {
+            View child = lastLayout.getItemAt(i);
+            if (child == null || child.getVisibility() == View.GONE) continue;
+            child.measure(unspec, unspec);
+            maxWidth = Math.max(maxWidth, child.getMeasuredWidth());
+        }
+        lastLayout.setMinimumWidth(maxWidth);
+        if (lastLayout.linearLayout != null) {
+            lastLayout.linearLayout.setMinimumWidth(maxWidth);
+        }
         return this;
     }
 
@@ -1350,6 +1410,7 @@ public class ItemOptions {
             public void onDismiss() {
                 actionBarPopupWindow = null;
                 dismissDim(container);
+                clearHoverListener();
 
                 if (dismissListener != null) {
                     dismissListener.run();
@@ -1441,12 +1502,12 @@ public class ItemOptions {
             }
         }
 
-        // discard all scrolls/gestures
-        if (fragment != null && fragment.getFragmentView() != null) {
-            fragment.getFragmentView().getRootView().dispatchTouchEvent(AndroidUtilities.emptyMotionEvent());
-        } else if (this.container != null) {
-            container.dispatchTouchEvent(AndroidUtilities.emptyMotionEvent());
-        }
+//        // discard all scrolls/gestures
+//        if (fragment != null && fragment.getFragmentView() != null) {
+//            fragment.getFragmentView().getRootView().dispatchTouchEvent(AndroidUtilities.emptyMotionEvent());
+//        } else if (this.container != null) {
+//            container.dispatchTouchEvent(AndroidUtilities.emptyMotionEvent());
+//        }
 
         if (blurForMenu && scrimBlur3SourceBitmap != null) {
             setGapBackgroundColor(Theme.multAlpha(Theme.getColor(Theme.key_actionBarDefaultSubmenuItem, resourcesProvider), 0.06f));
@@ -1468,6 +1529,8 @@ public class ItemOptions {
             (int) (offsetX = (X + this.translateX)),
             (int) (offsetY = (Y + this.translateY))
         );
+
+        installHoverReleaseListener();
 
         return this;
     }
@@ -1629,6 +1692,103 @@ public class ItemOptions {
         dontDismiss = true;
     }
 
+    private View.OnTouchListener hoverReleaseListener;
+    private View hoveredItem;
+    private final int[] hoverLoc = new int[2];
+
+    private void installHoverReleaseListener() {
+        if (scrimView == null) return;
+        if (scrimView.getParent() != null) {
+            scrimView.getParent().requestDisallowInterceptTouchEvent(true);
+        }
+        final WeakReference<ItemOptions> weakSelf = new WeakReference<>(this);
+        scrimView.setOnTouchListener(hoverReleaseListener = (v, event) -> {
+            final ItemOptions self = weakSelf.get();
+            if (self == null || self.actionBarPopupWindow == null || !self.actionBarPopupWindow.isShowing()) {
+                v.setOnTouchListener(null);
+                return false;
+            }
+            if (v.getParent() != null) {
+                v.getParent().requestDisallowInterceptTouchEvent(true);
+            }
+            final int action = event.getActionMasked();
+            if (action == MotionEvent.ACTION_MOVE) {
+                self.updateHover((int) event.getRawX(), (int) event.getRawY());
+            } else if (action == MotionEvent.ACTION_UP) {
+                self.releaseHover((int) event.getRawX(), (int) event.getRawY());
+                v.setOnTouchListener(null);
+                self.hoverReleaseListener = null;
+            } else if (action == MotionEvent.ACTION_CANCEL) {
+                self.cancelHover();
+                v.setOnTouchListener(null);
+                self.hoverReleaseListener = null;
+            }
+            return true;
+        });
+    }
+
+    private void clearHoverListener() {
+        cancelHover();
+        if (hoverReleaseListener != null && scrimView != null) {
+            scrimView.setOnTouchListener(null);
+        }
+        hoverReleaseListener = null;
+    }
+
+    private void updateHover(int rawX, int rawY) {
+        View hit = findItemAt(layout, rawX, rawY);
+        if (hit != hoveredItem) {
+            if (hoveredItem != null) {
+                hoveredItem.setPressed(false);
+            }
+            hoveredItem = hit;
+            if (hoveredItem != null) {
+                hoveredItem.setPressed(true);
+            }
+        }
+        if (hoveredItem != null) {
+            hoveredItem.getLocationOnScreen(hoverLoc);
+            hoveredItem.drawableHotspotChanged(rawX - hoverLoc[0], rawY - hoverLoc[1]);
+        }
+    }
+
+    private void releaseHover(int rawX, int rawY) {
+        updateHover(rawX, rawY);
+        if (hoveredItem != null) {
+            View target = hoveredItem;
+            hoveredItem = null;
+            target.setPressed(false);
+            target.performClick();
+        }
+    }
+
+    private void cancelHover() {
+        if (hoveredItem != null) {
+            hoveredItem.setPressed(false);
+            hoveredItem = null;
+        }
+    }
+
+    private static View findItemAt(View root, int rawX, int rawY) {
+        if (root == null || root.getVisibility() != View.VISIBLE) return null;
+        int[] loc = new int[2];
+        root.getLocationOnScreen(loc);
+        int l = loc[0], t = loc[1];
+        int r = l + root.getWidth(), b = t + root.getHeight();
+        if (rawX < l || rawX >= r || rawY < t || rawY >= b) return null;
+        if (root instanceof ViewGroup) {
+            ViewGroup vg = (ViewGroup) root;
+            for (int i = vg.getChildCount() - 1; i >= 0; i--) {
+                View deeper = findItemAt(vg.getChildAt(i), rawX, rawY);
+                if (deeper != null) return deeper;
+            }
+        }
+        if (root.isClickable() && root.isEnabled() && !(root instanceof ActionBarPopupWindow.GapView)) {
+            return root;
+        }
+        return null;
+    }
+
     public static void getPointOnScreen(View v, ViewGroup finalContainer, float[] point) {
         if (v == null || finalContainer == null) return;
         float x = 0;
@@ -1636,7 +1796,7 @@ public class ItemOptions {
         while (v != finalContainer) {
             y += v.getY();
             x += v.getX();
-            if (v instanceof ScrollView) {
+            if (v instanceof ScrollView || v instanceof HorizontalScrollView) {
                 x -= v.getScrollX();
                 y -= v.getScrollY();
             }

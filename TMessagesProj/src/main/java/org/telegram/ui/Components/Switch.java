@@ -302,6 +302,7 @@ public class Switch extends View {
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         attachedToWindow = false;
+        destroyBitmaps();
     }
 
     public void setOnCheckedChangeListener(OnCheckedChangeListener listener) {
@@ -365,19 +366,84 @@ public class Switch extends View {
         return isChecked;
     }
 
+    private int getOverlayPadding() {
+        return NaConfig.INSTANCE.getSwitchStyle().Int() == SWITCH_STYLE_MD3 ? AndroidUtilities.dp(5) : 0;
+    }
+
+    private void checkBitmaps() {
+        if (overrideColorProgress == 0) {
+            return;
+        }
+        int overlayPadding = getOverlayPadding();
+        int bitmapW = getMeasuredWidth() + overlayPadding * 4;
+        int bitmapH = getMeasuredHeight() + overlayPadding * 4;
+        if (bitmapsCreated && overlayBitmap != null && overlayBitmap[0] != null &&
+                (overlayBitmap[0].getWidth() != bitmapW || overlayBitmap[0].getHeight() != bitmapH)) {
+            destroyBitmaps();
+        }
+        if (bitmapsCreated || bitmapW <= 0 || bitmapH <= 0) {
+            return;
+        }
+        try {
+            overlayBitmap = new Bitmap[2];
+            overlayCanvas = new Canvas[2];
+            for (int a = 0; a < 2; a++) {
+                overlayBitmap[a] = Bitmap.createBitmap(bitmapW, bitmapH, Bitmap.Config.ARGB_8888);
+                overlayCanvas[a] = new Canvas(overlayBitmap[a]);
+            }
+            overlayMaskBitmap = Bitmap.createBitmap(bitmapW, bitmapH, Bitmap.Config.ARGB_8888);
+            overlayMaskCanvas = new Canvas(overlayMaskBitmap);
+
+            overlayEraserPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            overlayEraserPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+
+            overlayMaskPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            overlayMaskPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_OUT));
+            bitmapsCreated = true;
+        } catch (Throwable ignored) {
+        }
+    }
+
+    private void destroyBitmaps() {
+        if (bitmapsCreated) {
+            if (overlayBitmap != null) {
+                for (int a = 0; a < overlayBitmap.length; a++) {
+                    if (overlayBitmap[a] != null) {
+                        overlayBitmap[a].recycle();
+                        overlayBitmap[a] = null;
+                    }
+                }
+                overlayBitmap = null;
+            }
+            if (overlayMaskBitmap != null) {
+                overlayMaskBitmap.recycle();
+                overlayMaskBitmap = null;
+            }
+        }
+        overlayCanvas = null;
+        overlayMaskCanvas = null;
+        bitmapsCreated = false;
+    }
+
     public void setOverrideColor(int override) {
         if (overrideColorProgress == override) {
             return;
         }
-        if (overlayBitmap == null) {
+        int overlayPadding = getOverlayPadding();
+        int bitmapW = getMeasuredWidth() + overlayPadding * 4;
+        int bitmapH = getMeasuredHeight() + overlayPadding * 4;
+        if (bitmapW <= 0 || bitmapH <= 0) {
+            return;
+        }
+        if (overlayBitmap == null || overlayBitmap[0].getWidth() != bitmapW || overlayBitmap[0].getHeight() != bitmapH) {
             try {
                 overlayBitmap = new Bitmap[2];
                 overlayCanvas = new Canvas[2];
                 for (int a = 0; a < 2; a++) {
-                    overlayBitmap[a] = Bitmap.createBitmap(getMeasuredWidth(), getMeasuredHeight(), Bitmap.Config.ARGB_8888);
+                    overlayBitmap[a] = Bitmap.createBitmap(bitmapW, bitmapH, Bitmap.Config.ARGB_8888);
                     overlayCanvas[a] = new Canvas(overlayBitmap[a]);
                 }
-                overlayMaskBitmap = Bitmap.createBitmap(getMeasuredWidth(), getMeasuredHeight(), Bitmap.Config.ARGB_8888);
+                overlayMaskBitmap = Bitmap.createBitmap(bitmapW, bitmapH, Bitmap.Config.ARGB_8888);
                 overlayMaskCanvas = new Canvas(overlayMaskBitmap);
 
                 overlayEraserPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -425,6 +491,13 @@ public class Switch extends View {
     protected void onDraw(Canvas canvas) {
         if (getVisibility() != VISIBLE) {
             return;
+        }
+
+        if (overrideColorProgress != 0) {
+            checkBitmaps();
+            if (!bitmapsCreated) {
+                overrideColorProgress = 0;
+            }
         }
 
         int switchStyle = NaConfig.INSTANCE.getSwitchStyle().Int();
@@ -486,10 +559,12 @@ public class Switch extends View {
             Canvas canvasToDraw = a == 0 ? canvas : overlayCanvas[0];
 
             if (a == 1) {
+                int op = getOverlayPadding();
                 overlayBitmap[0].eraseColor(0);
                 paint.setColor(0xff000000);
                 overlayMaskCanvas.drawRect(0, 0, overlayMaskBitmap.getWidth(), overlayMaskBitmap.getHeight(), paint);
-                overlayMaskCanvas.drawCircle(overlayCx - getX(), overlayCy - getY(), overlayRad, overlayEraserPaint);
+                overlayMaskCanvas.drawCircle(overlayCx - getX() + op * 2, overlayCy - getY() + op * 2, overlayRad, overlayEraserPaint);
+                canvasToDraw.translate(op * 2, op * 2);
             }
             if (overrideColorProgress == 1) {
                 colorProgress = a == 0 ? 0 : 1;
@@ -563,11 +638,12 @@ public class Switch extends View {
                 rippleDrawable.setBounds(tx - AndroidUtilities.dp(18), ty - AndroidUtilities.dp(18), tx + AndroidUtilities.dp(18), ty + AndroidUtilities.dp(18));
                 rippleDrawable.draw(canvasToDraw);
             } else if (a == 1) {
+                canvasToDraw.translate(-getOverlayPadding() * 2, -getOverlayPadding() * 2);
                 canvasToDraw.drawBitmap(overlayMaskBitmap, 0, 0, overlayMaskPaint);
             }
         }
         if (overrideColorProgress != 0) {
-            canvas.drawBitmap(overlayBitmap[0], 0, 0, null);
+            canvas.drawBitmap(overlayBitmap[0], -getOverlayPadding() * 2, -getOverlayPadding() * 2, null);
         }
 
         for (int a = 0; a < 2; a++) {
@@ -578,6 +654,7 @@ public class Switch extends View {
 
             if (a == 1) {
                 overlayBitmap[1].eraseColor(0);
+                canvasToDraw.translate(getOverlayPadding() * 2, getOverlayPadding() * 2);
             }
             if (overrideColorProgress == 1) {
                 colorProgress = a == 0 ? 0 : 1;
@@ -602,6 +679,9 @@ public class Switch extends View {
             green = (int) (g1 + (g2 - g1) * colorProgress);
             blue = (int) (b1 + (b2 - b1) * colorProgress);
             alpha = (int) (a1 + (a2 - a1) * colorProgress);
+            if (isMd3Style) {
+                alpha = (int) (alpha * overrideAlpha);
+            }
             paint.setColor(((alpha & 0xff) << 24) | ((red & 0xff) << 16) | ((green & 0xff) << 8) | (blue & 0xff));
 
             if (isOneUiStyle) {
@@ -676,11 +756,12 @@ public class Switch extends View {
                 }
             }
             if (a == 1) {
+                canvasToDraw.translate(-getOverlayPadding() * 2, -getOverlayPadding() * 2);
                 canvasToDraw.drawBitmap(overlayMaskBitmap, 0, 0, overlayMaskPaint);
             }
         }
         if (overrideColorProgress != 0) {
-            canvas.drawBitmap(overlayBitmap[1], 0, 0, null);
+            canvas.drawBitmap(overlayBitmap[1], -getOverlayPadding() * 2, -getOverlayPadding() * 2, null);
         }
     }
 

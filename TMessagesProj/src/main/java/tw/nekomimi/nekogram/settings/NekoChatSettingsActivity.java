@@ -72,6 +72,7 @@ import tw.nekomimi.nekogram.config.cell.ConfigCellSelectBox;
 import tw.nekomimi.nekogram.config.cell.ConfigCellTextCheck;
 import tw.nekomimi.nekogram.config.cell.ConfigCellTextCheck2;
 import tw.nekomimi.nekogram.config.cell.ConfigCellTextCheckIcon;
+import tw.nekomimi.nekogram.config.cell.ConfigCellTextDetailIcon;
 import tw.nekomimi.nekogram.config.cell.ConfigCellTextInput;
 import tw.nekomimi.nekogram.helpers.TranscribeHelper;
 import tw.nekomimi.nekogram.helpers.remote.EmojiHelper;
@@ -112,8 +113,6 @@ public class NekoChatSettingsActivity extends BaseNekoXSettingsActivity implemen
     };
 
     // Stickers
-    private final AbstractConfigCell headerSticker = cellGroup.appendCell(new ConfigCellHeader(getString(R.string.StickerSettings)));
-    // Sticker Size (AyuGram-aligned: title + value chip rendered inside StickerSizeCell)
     private final AbstractConfigCell stickerSizeRow = cellGroup.appendCell(new ConfigCellCustom("StickerSize", ConfigCellCustom.CUSTOM_ITEM_StickerSize, false));
     private final AbstractConfigCell hideTimeForStickerRow = cellGroup.appendCell(new ConfigCellTextCheck(NekoConfig.hideTimeForSticker));
     private final AbstractConfigCell dontSendGreetingStickerRow = cellGroup.appendCell(new ConfigCellTextCheck(NekoConfig.dontSendGreetingSticker));
@@ -121,15 +120,38 @@ public class NekoChatSettingsActivity extends BaseNekoXSettingsActivity implemen
     private final AbstractConfigCell maxRecentStickerCountRow = cellGroup.appendCell(new ConfigCellCustom("maxRecentStickerCount", CellGroup.ITEM_TYPE_TEXT_SETTINGS_CELL, true));
     private final AbstractConfigCell dividerSticker = cellGroup.appendCell(new ConfigCellDivider());
 
+    // AI Chat
+    private final AbstractConfigCell aiChatRow = cellGroup.appendCell(new ConfigCellTextDetailIcon("AIChat", getString(R.string.AIChat), getString(R.string.AIChatInfo), R.drawable.ai_chat_solar, true, () ->
+            presentFragment(new com.exteragram.messenger.ai.ui.activities.AiPreferencesActivity())));
+    private final AbstractConfigCell dividerAiChat = cellGroup.appendCell(new ConfigCellDivider());
+
+    // Transcribe
+    private final AbstractConfigCell headerTranscribe = cellGroup.appendCell(new ConfigCellHeader(getString(R.string.PremiumPreviewVoiceToText)));
+    private final AbstractConfigCell transcribeProviderRow = cellGroup.appendCell(new ConfigCellSelectBox("TranscribeProviderShort", NaConfig.INSTANCE.getTranscribeProvider(), new String[]{
+            getString(R.string.TranscribeProviderAuto),
+            getString(R.string.TelegramPremium),
+            getString(R.string.TranscribeProviderWorkersAI),
+            getString(R.string.TranscribeProviderGemini),
+            getString(R.string.TranscribeProviderOpenAI),
+    }, null));
+    private final AbstractConfigCell transcribeProviderCfCredentialsRow = cellGroup.appendCell(new ConfigCellCustom("CloudflareCredentials", CellGroup.ITEM_TYPE_TEXT_SETTINGS_CELL, true));
+    private final AbstractConfigCell transcribeProviderGeminiApiKeyRow = cellGroup.appendCell(new ConfigCellCustom("LlmProviderGeminiKey", CellGroup.ITEM_TYPE_TEXT_SETTINGS_CELL, true));
+    private final AbstractConfigCell transcribeProviderOpenAiRow = cellGroup.appendCell(new ConfigCellCustom("TranscribeProviderOpenAI", CellGroup.ITEM_TYPE_TEXT_SETTINGS_CELL, true));
+    private final AbstractConfigCell dividerTranscribe = cellGroup.appendCell(new ConfigCellDivider());
+
     // Messages
     private final AbstractConfigCell headerMessages = cellGroup.appendCell(new ConfigCellHeader(getString(R.string.MessagesChartTitle)));
     private final AbstractConfigCell messagePreviewRow = cellGroup.appendCell(new ConfigCellCustom("MessagePreview", ConfigCellCustom.CUSTOM_ITEM_MessagePreview, false));
     private final AbstractConfigCell showTimeHintRow = cellGroup.appendCell(new ConfigCellTextCheck(NaConfig.INSTANCE.getShowTimeHint()));
+    private final AbstractConfigCell messageColoredBackgroundRow = cellGroup.appendCell(new ConfigCellTextCheck(NaConfig.INSTANCE.getMessageColoredBackground(), null));
     private final AbstractConfigCell removeMessageTailRow = cellGroup.appendCell(new ConfigCellTextCheck(NaConfig.INSTANCE.getRemoveMessageTail()));
     private final AbstractConfigCell useEditedIconRow = cellGroup.appendCell(new ConfigCellTextCheck(NaConfig.INSTANCE.getUseEditedIcon()));
     private final AbstractConfigCell customEditedMessageRow = cellGroup.appendCell(new ConfigCellTextInput(null, NaConfig.INSTANCE.getCustomEditedMessage(), "", null));
     private final AbstractConfigCell showOnlineStatusRow = cellGroup.appendCell(new ConfigCellTextCheck(NaConfig.INSTANCE.getShowOnlineStatus(), getString(R.string.ShowOnlineStatusNotice)));
-    private final AbstractConfigCell disableAiFeaturesRow = cellGroup.appendCell(new ConfigCellTextCheck(NaConfig.INSTANCE.getDisableAiFeatures(), getString(R.string.DisableAiFeaturesNotice)));
+    private final AbstractConfigCell aiFeaturesRow = cellGroup.appendCell(new ConfigCellTextCheck2("HideAi", getString(R.string.AiHideHeader), new ArrayList<>() {{
+        add(new ConfigCellCheckBox(NaConfig.INSTANCE.getHideAiEditor(), "HideAiEditor", getString(R.string.HideAiEditor), 0, true));
+        add(new ConfigCellCheckBox(NaConfig.INSTANCE.getHideAiSummary(), "HideAiSummary", getString(R.string.HideAiSummary), 0, false));
+    }}, null));
     private final AbstractConfigCell hideShareButtonInChannelRow = cellGroup.appendCell(new ConfigCellTextCheck(NaConfig.INSTANCE.getHideShareButtonInChannel()));
     private final AbstractConfigCell groupedMessageMenuRow = cellGroup.appendCell(new ConfigCellTextCheck(NaConfig.INSTANCE.getGroupedMessageMenu(), getString(R.string.GroupedMessageMenuNotice)));
     private final AbstractConfigCell showMessageIDRow = cellGroup.appendCell(new ConfigCellTextCheck(NaConfig.INSTANCE.getShowMessageID()));
@@ -204,6 +226,7 @@ public class NekoChatSettingsActivity extends BaseNekoXSettingsActivity implemen
             getString(R.string.VideoMessagesCameraRear),
             getString(R.string.VideoMessagesCameraAsk)
     }, null));
+    private final AbstractConfigCell moveAttachCameraToBottomRow = cellGroup.appendCell(new ConfigCellTextCheck(NekoConfig.moveAttachCameraToBottom, getString(R.string.MoveAttachCameraToBottomNotice)));
     private final AbstractConfigCell rememberLastUsedCameraRow = cellGroup.appendCell(new ConfigCellTextCheck(NaConfig.INSTANCE.getRememberLastUsedCamera(), getString(R.string.RememberLastUsedCameraInfo), getString(R.string.RememberLastUsedCamera)));
     private final AbstractConfigCell staticZoomRow = cellGroup.appendCell(new ConfigCellTextCheck(NaConfig.INSTANCE.getStaticZoom(), null, getString(R.string.StaticZoom)));
     private final AbstractConfigCell staticZoomInfoRow = cellGroup.appendCell(new ConfigCellCustom("StaticZoomInfo", CellGroup.ITEM_TYPE_TEXT, false));
@@ -222,20 +245,6 @@ public class NekoChatSettingsActivity extends BaseNekoXSettingsActivity implemen
     private final AbstractConfigCell dontAutoPlayNextVoiceRow = cellGroup.appendCell(new ConfigCellTextCheck(NaConfig.INSTANCE.getDontAutoPlayNextVoice()));
     private final AbstractConfigCell showSpoilersDirectlyRow = cellGroup.appendCell(new ConfigCellTextCheck(NekoConfig.showSpoilersDirectly));
     private final AbstractConfigCell dividerMedia = cellGroup.appendCell(new ConfigCellDivider());
-
-    // Transcribe
-    private final AbstractConfigCell headerTranscribe = cellGroup.appendCell(new ConfigCellHeader(getString(R.string.PremiumPreviewVoiceToText)));
-    private final AbstractConfigCell transcribeProviderRow = cellGroup.appendCell(new ConfigCellSelectBox("TranscribeProviderShort", NaConfig.INSTANCE.getTranscribeProvider(), new String[]{
-            getString(R.string.TranscribeProviderAuto),
-            getString(R.string.TelegramPremium),
-            getString(R.string.TranscribeProviderWorkersAI),
-            getString(R.string.TranscribeProviderGemini),
-            getString(R.string.TranscribeProviderOpenAI),
-    }, null));
-    private final AbstractConfigCell transcribeProviderCfCredentialsRow = cellGroup.appendCell(new ConfigCellCustom("CloudflareCredentials", CellGroup.ITEM_TYPE_TEXT_SETTINGS_CELL, true));
-    private final AbstractConfigCell transcribeProviderGeminiApiKeyRow = cellGroup.appendCell(new ConfigCellCustom("LlmProviderGeminiKey", CellGroup.ITEM_TYPE_TEXT_SETTINGS_CELL, true));
-    private final AbstractConfigCell transcribeProviderOpenAiRow = cellGroup.appendCell(new ConfigCellCustom("TranscribeProviderOpenAI", CellGroup.ITEM_TYPE_TEXT_SETTINGS_CELL, true));
-    private final AbstractConfigCell dividerTranscribe = cellGroup.appendCell(new ConfigCellDivider());
 
     // MenuAndButtons
     private final AbstractConfigCell headerMenuAndButtons = cellGroup.appendCell(new ConfigCellHeader(getString(R.string.MenuAndButtons)));
@@ -710,6 +719,13 @@ public class NekoChatSettingsActivity extends BaseNekoXSettingsActivity implemen
                 if (stickerSizeCell != null) {
                     stickerSizeCell.invalidate();
                 }
+            } else if (key.equals(NaConfig.INSTANCE.getMessageColoredBackground().getKey())) {
+                if (stickerSizeCell != null) {
+                    stickerSizeCell.invalidate();
+                }
+                if (messageSettingsPreviewCell != null) {
+                    messageSettingsPreviewCell.refresh();
+                }
             } else if (key.equals(NaConfig.INSTANCE.getRemoveMessageTail().getKey())) {
                 if (getParentActivity() != null) {
                     Theme.chat_msgInDrawable = null;
@@ -800,13 +816,18 @@ public class NekoChatSettingsActivity extends BaseNekoXSettingsActivity implemen
                     .filter(i -> i <= getMessagesController().maxRecentStickersCount)
                     .mapToObj(String::valueOf)
                     .collect(Collectors.toList());
-            PopupBuilder builder = new PopupBuilder(view);
-            builder.setItems(types, (i, str) -> {
-                NekoConfig.maxRecentStickerCount.setConfigInt(Integer.parseInt(str.toString()));
+            int currentCount = NekoConfig.maxRecentStickerCount.Int();
+            int selectedIndex = -1;
+            for (int i = 0; i < types.size(); i++) {
+                if (Integer.parseInt(types.get(i)) == currentCount) {
+                    selectedIndex = i;
+                    break;
+                }
+            }
+            showSingleChoiceDialog(getParentActivity(), R.string.maxRecentStickerCount, types.toArray(new String[0]), selectedIndex, getResourceProvider(), i -> {
+                NekoConfig.maxRecentStickerCount.setConfigInt(Integer.parseInt(types.get(i)));
                 listAdapter.notifyItemChanged(position);
-                return Unit.INSTANCE;
             });
-            builder.show();
         } else if (position == cellGroup.rows.indexOf(doubleTapActionRow) || position == cellGroup.rows.indexOf(doubleTapActionOutRow)) {
             ArrayList<String> arrayList = new ArrayList<>();
             ArrayList<Integer> types = new ArrayList<>();
@@ -814,8 +835,6 @@ public class NekoChatSettingsActivity extends BaseNekoXSettingsActivity implemen
             types.add(DoubleTap.DOUBLE_TAP_ACTION_NONE);
             arrayList.add(getString(R.string.SendReactions));
             types.add(DoubleTap.DOUBLE_TAP_ACTION_SEND_REACTIONS);
-            arrayList.add(getString(R.string.ShowReactions));
-            types.add(DoubleTap.DOUBLE_TAP_ACTION_SHOW_REACTIONS);
             arrayList.add(getString(R.string.TranslateMessage));
             types.add(DoubleTap.DOUBLE_TAP_ACTION_TRANSLATE);
             arrayList.add(getString(R.string.TranslateMessageLLM));
@@ -834,32 +853,39 @@ public class NekoChatSettingsActivity extends BaseNekoXSettingsActivity implemen
             }
             arrayList.add(getString(R.string.Delete));
             types.add(DoubleTap.DOUBLE_TAP_ACTION_DELETE);
-            PopupBuilder builder = new PopupBuilder(view);
-            builder.setItems(arrayList, (i, str) -> {
-                boolean isIncoming = position == cellGroup.rows.indexOf(doubleTapActionRow);
+            arrayList.add(getString(R.string.GhostReadMessage));
+            types.add(DoubleTap.DOUBLE_TAP_ACTION_READ);
+            boolean isIncoming = position == cellGroup.rows.indexOf(doubleTapActionRow);
+
+            int[] icons = new int[types.size()];
+            for (int i = 0; i < types.size(); i++) {
+                Integer iconRes = DoubleTap.doubleTapActionIconMap.get(types.get(i));
+                icons[i] = iconRes != null ? iconRes : 0;
+            }
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity(), getResourceProvider());
+            builder.setTitle(getString(isIncoming ? R.string.DoubleTapIncoming : R.string.DoubleTapOutgoing));
+            builder.setItems(arrayList.toArray(new CharSequence[0]), icons, (dialog, which) -> {
                 if (isIncoming) {
-                    NaConfig.INSTANCE.getDoubleTapAction().setConfigInt(types.get(i));
+                    NaConfig.INSTANCE.getDoubleTapAction().setConfigInt(types.get(which));
                 } else {
-                    NaConfig.INSTANCE.getDoubleTapActionOut().setConfigInt(types.get(i));
+                    NaConfig.INSTANCE.getDoubleTapActionOut().setConfigInt(types.get(which));
                 }
                 listAdapter.notifyItemChanged(position);
                 if (doubleTapPreviewCell != null) {
                     doubleTapPreviewCell.updateIcons(isIncoming ? 1 : 2, true);
                 }
-                return Unit.INSTANCE;
             });
-            builder.show();
+            builder.setNegativeButton(getString(R.string.Cancel), null);
+            showDialog(builder.create());
         } else if (position == cellGroup.rows.indexOf(cameraTypeRow)) {
-            PopupBuilder builder = new PopupBuilder(view);
-            builder.setItems(new String[]{"Camera 1", "Camera 2"}, (i, str) -> {
+            showSingleChoiceDialog(getParentActivity(), R.string.CameraType, new String[]{"Camera 1", "Camera 2"}, SharedConfig.isUsingCamera2(currentAccount) ? 1 : 0, getResourceProvider(), i -> {
                 boolean useCamera2 = i == 1;
                 if (SharedConfig.isUsingCamera2(currentAccount) != useCamera2) {
                     SharedConfig.toggleUseCamera2(currentAccount);
                 }
                 syncAyuCameraRowsAnimated();
-                return Unit.INSTANCE;
             });
-            builder.show();
         } else if (position == cellGroup.rows.indexOf(emojiSetsRow)) {
             presentFragment(new NekoEmojiSettingsActivity());
         } else if (position == cellGroup.rows.indexOf(transcribeProviderCfCredentialsRow)) {
@@ -882,6 +908,10 @@ public class NekoChatSettingsActivity extends BaseNekoXSettingsActivity implemen
         int cameraToggleRowIndex = cellGroup.rows.indexOf(cameraExtensionsRow);
         if (cameraToggleRowIndex >= 0 && position > cameraToggleRowIndex && position <= cameraToggleRowIndex + cameraExtensionRows.size()) {
             listAdapter.notifyItemChanged(cameraToggleRowIndex);
+        }
+        int aiToggleRowIndex = cellGroup.rows.indexOf(aiFeaturesRow);
+        if (aiToggleRowIndex >= 0 && position > aiToggleRowIndex && position <= aiToggleRowIndex + ((ConfigCellTextCheck2) aiFeaturesRow).getVisibleCheckBox().size()) {
+            listAdapter.notifyItemChanged(aiToggleRowIndex);
         }
     }
 
@@ -1119,7 +1149,7 @@ public class NekoChatSettingsActivity extends BaseNekoXSettingsActivity implemen
                     textInfoPrivacyCell.setText(getString(R.string.StaticZoomInfo));
                 }
             } else if (holder.itemView instanceof EmojiSetCell v1) {
-                v1.setData(EmojiHelper.getInstance().getCurrentEmojiPackInfo(), false, true);
+                v1.setData(EmojiHelper.getInstance().getCurrentEmojiPackInfo(), false, cellGroup.needSetDivider(emojiSetsRow));
             }
         }
 

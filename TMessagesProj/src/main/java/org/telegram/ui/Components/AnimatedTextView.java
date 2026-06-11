@@ -331,9 +331,7 @@ public class AnimatedTextView extends View {
                 ellipsizeGradientMatrix.reset();
                 ellipsizeGradientMatrix.postTranslate(bounds.right - rightPadding - w, 0);
                 ellipsizeGradient.setLocalMatrix(ellipsizeGradientMatrix);
-                canvas.save();
                 canvas.drawRect(bounds.right - rightPadding - w, bounds.top, bounds.right - rightPadding + AndroidUtilities.dp(1), bounds.bottom, ellipsizePaint);
-                canvas.restore();
                 canvas.restore();
             }
         }
@@ -1180,7 +1178,7 @@ public class AnimatedTextView extends View {
         }
         lastMaxWidth = width;
         if (adaptWidth && MeasureSpec.getMode(widthMeasureSpec) == MeasureSpec.AT_MOST) {
-            width = getPaddingLeft() + (int) Math.ceil(drawable.getWidth()) + getPaddingRight();
+            width = getPaddingLeft() + (int) Math.ceil(drawable.getAnimateToWidth()) + getPaddingRight();
         }
         setMeasuredDimension(width, height);
     }
@@ -1236,12 +1234,13 @@ public class AnimatedTextView extends View {
                 return;
             }
         }
-        int wasWidth = (int) drawable.getWidth();
+        int wasWidth = (int) drawable.getAnimateToWidth();
         drawable.setBounds(getPaddingLeft(), getPaddingTop(), lastMaxWidth - getPaddingRight(), getMeasuredHeight() - getPaddingBottom());
         drawable.setText(text, animated, moveDown);
-        if (wasWidth < drawable.getWidth() || !animated && wasWidth != drawable.getWidth()) {
-            requestLayout();
+        if (wasWidth == (int) drawable.getAnimateToWidth() && animated) {
+            return;
         }
+        requestLayout();
     }
 
     public void setSizeableBackground(Drawable drawable) {

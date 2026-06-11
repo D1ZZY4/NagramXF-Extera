@@ -110,12 +110,7 @@ public class FilterTabsPreviewCell extends FrameLayout implements NotificationCe
 
             @Override
             public int getTabCounter(int tabId) {
-                // Mirror DialogsActivity.getTabCounter: when "Ignore Unread Count"
-                // is set to FilterAllChatsShort (DIALOG_FILTER_EXCLUDE_ALL) the
-                // unread badges are suppressed everywhere, so the preview must
-                // also hide them to honestly represent the live state.
-                if (NaConfig.INSTANCE.getIgnoreUnreadCount().Int()
-                        == NekoConfig.DIALOG_FILTER_EXCLUDE_ALL) {
+                if (NaConfig.INSTANCE.getIgnoreUnreadCount().Bool()) {
                     return 0;
                 }
                 Integer c = idsWithCounters.get(tabId);

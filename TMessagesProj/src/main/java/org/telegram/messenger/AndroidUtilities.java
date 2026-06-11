@@ -1463,8 +1463,10 @@ public class AndroidUtilities {
         if (context == null || (AndroidUtilities.statusBarHeight > 0 && !force)) {
             return;
         }
-        AndroidUtilities.statusBarHeight = getStatusBarHeight(context);
-        AndroidUtilities.navigationBarHeight = getNavigationBarHeight(context);
+        if (BuildVars.USE_LEGACY_SYSTEM_INSETS) {
+            AndroidUtilities.statusBarHeight = getStatusBarHeight(context);
+            AndroidUtilities.navigationBarHeight = getNavigationBarHeight(context);
+        }
     }
 
     public static int getStatusBarHeight(Context context) {
@@ -2867,6 +2869,10 @@ public class AndroidUtilities {
         } else {
             if (NekoConfig.mapPreviewProvider.Int() == 1) {
                 provider = 1;
+            } else if (NekoConfig.mapPreviewProvider.Int() == 2) {
+                provider = 4;
+            } else if (NekoConfig.mapPreviewProvider.Int() == 3) {
+                return null;
             }
         }
         if (provider == 1 || provider == 3) {
@@ -2887,7 +2893,7 @@ public class AndroidUtilities {
                 return String.format(Locale.US, "https://static-maps.yandex.ru/1.x/?ll=%.6f,%.6f&z=%d&size=%d,%d&l=map&scale=%d&lang=%s", lon, lat, zoom, width * scale, height * scale, scale, lang);
             }
         } else {
-            String k = "";
+            String k = "AIzaSyB0y3zA4LbA04ZPaHKsr_Xt5ZQWbMftj8I";
             if (!TextUtils.isEmpty(k)) {
                 if (marker) {
                     return String.format(Locale.US, "https://maps.googleapis.com/maps/api/staticmap?center=%.6f,%.6f&zoom=%d&size=%dx%d&maptype=roadmap&scale=%d&markers=color:red%%7Csize:mid%%7C%.6f,%.6f&sensor=false&key=%s", lat, lon, zoom, width, height, scale, lat, lon, k);
@@ -4271,7 +4277,7 @@ public class AndroidUtilities {
             Intent intent = new Intent(Intent.ACTION_VIEW);
             intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             MimeTypeMap myMime = MimeTypeMap.getSingleton();
-            int idx = fileName.lastIndexOf('.');
+            int idx = fileName == null ? -1 : fileName.lastIndexOf('.');
             if (idx != -1) {
                 String ext = fileName.substring(idx + 1);
                 if (restrict && MessageObject.isV(ext)) {
@@ -4711,7 +4717,7 @@ public class AndroidUtilities {
             tableView.addRow(getString(R.string.UseProxyUsername), user);
         }
         if (!TextUtils.isEmpty(password)) {
-            tableView.addRow(getString(R.string.UseProxyPassword), user);
+            tableView.addRow(getString(R.string.UseProxyPassword), password);
         }
         final ButtonSpan.TextViewButtons[] statusTextView = new ButtonSpan.TextViewButtons[1];
         tableView.addRow(getString(R.string.ProxyStatus), "", statusTextView);

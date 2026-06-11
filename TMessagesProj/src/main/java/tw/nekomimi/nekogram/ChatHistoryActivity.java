@@ -3,7 +3,7 @@
  * It is licensed under GNU GPL v. 3 or later.
  * You should have received a copy of the license in this archive (see LICENSE).
  * 
- * https://github.com/Keeperorowner/NagramX_Fork
+ * https://github.com/Keeperorowner/NagramXF
  * 
  * Please, be respectful and credit the original author if you use this code.
  *

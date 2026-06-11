@@ -7,8 +7,6 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.graphics.Canvas;
-import android.graphics.Paint;
 import android.os.Parcelable;
 import android.view.Gravity;
 import android.view.View;
@@ -32,7 +30,6 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
-import org.telegram.ui.Components.SeekBarView;
 import org.telegram.ui.Components.UndoView;
 import org.telegram.ui.LaunchActivity;
 
@@ -62,7 +59,6 @@ public class NekoAppearanceSettingsActivity extends BaseNekoXSettingsActivity {
     private FabShapePreviewCell fabShapePreviewCell;
     private ChatListPreviewCell chatListPreviewCell;
     private FilterTabsPreviewCell filterTabsPreviewCell;
-    private ChatBlurAlphaSeekBar chatBlurAlphaSeekbar;
     private Parcelable recyclerViewState = null;
 
     private boolean wasCentered = false;
@@ -141,16 +137,12 @@ public class NekoAppearanceSettingsActivity extends BaseNekoXSettingsActivity {
     private final AbstractConfigCell doNotUnarchiveBySwipeRow = cellGroup.appendCell(new ConfigCellTextCheck(NaConfig.INSTANCE.getDoNotUnarchiveBySwipe()));
     private final AbstractConfigCell openArchiveOnPullRow = cellGroup.appendCell(new ConfigCellTextCheck(NekoConfig.openArchiveOnPull));
     private final AbstractConfigCell hideArchiveRow = cellGroup.appendCell(new ConfigCellTextCheck(NaConfig.INSTANCE.getHideArchive()));
-    private final AbstractConfigCell ignoreUnreadCountRow = cellGroup.appendCell(new ConfigCellSelectBox(null, NaConfig.INSTANCE.getIgnoreUnreadCount(), new String[]{
-            getString(R.string.Disable),
-            getString(R.string.FilterMuted),
-            getString(R.string.FilterAllChatsShort)
-    }, null));
     private final AbstractConfigCell tabsTitleTypeRow = cellGroup.appendCell(new ConfigCellSelectBox(null, NekoConfig.tabsTitleType, new String[]{
             getString(R.string.TabTitleTypeText),
             getString(R.string.TabTitleTypeIcon),
             getString(R.string.TabTitleTypeMix)
     }, null));
+    private final AbstractConfigCell ignoreUnreadCountRow = cellGroup.appendCell(new ConfigCellTextCheck(NaConfig.INSTANCE.getIgnoreUnreadCount()));
     private final AbstractConfigCell dividerNavigationTop = cellGroup.appendCell(new ConfigCellDivider());
     private final AbstractConfigCell headerNavigation = cellGroup.appendCell(new ConfigCellHeader(getString(R.string.AppNavigation)));
     private final AbstractConfigCell navigationDrawerRow = cellGroup.appendCell(
@@ -159,7 +151,7 @@ public class NekoAppearanceSettingsActivity extends BaseNekoXSettingsActivity {
     private final AbstractConfigCell drawerElementsRow = cellGroup.appendCell(new ConfigCellTextCheckIcon(null, "DrawerElements", getString(R.string.DrawerElements), R.drawable.menu_newfilter, false, () ->
             showDialog(showConfigMenuWithIconAlert(this, R.string.DrawerElements, new java.util.ArrayList<>() {{
                 add(new ConfigCellTextCheckIcon(NaConfig.INSTANCE.getDrawerItemMyProfile(), getString(R.string.MyProfile), R.drawable.left_status_profile));
-                add(new ConfigCellTextCheckIcon(NaConfig.INSTANCE.getDrawerItemSetEmojiStatus(), getString(R.string.SetEmojiStatus), R.drawable.msg_status_set, true));
+                add(new ConfigCellTextCheckIcon(NaConfig.INSTANCE.getDrawerItemSetEmojiStatus(), getString(R.string.SetEmojiStatus), R.drawable.msg_status_set_solar, true));
                 add(new ConfigCellTextCheckIcon(NaConfig.INSTANCE.getDrawerItemArchivedChats(), getString(R.string.ArchivedChats), R.drawable.msg_archive, true));
                 add(new ConfigCellTextCheckIcon(NaConfig.INSTANCE.getDrawerItemNewGroup(), getString(R.string.NewGroup), R.drawable.msg_groups));
                 add(new ConfigCellTextCheckIcon(NaConfig.INSTANCE.getDrawerItemNewChannel(), getString(R.string.NewChannel), R.drawable.msg_channel));
@@ -179,11 +171,13 @@ public class NekoAppearanceSettingsActivity extends BaseNekoXSettingsActivity {
             new ConfigCellTextCheckIcon(null, "MainTabsCustomize", getString(R.string.MainTabsCustomize), R.drawable.tabs_reorder, false, () ->
                     presentFragment(new MainTabsCustomizeActivity()))
     );
+    private final AbstractConfigCell pillStackRow = cellGroup.appendCell(
+            new ConfigCellTextCheckIcon(null, "PillStack", getString(R.string.PillStackPills), R.drawable.ic_ab_search, false, () ->
+                    presentFragment(new com.exteragram.messenger.pillstack.ui.PillStackPreferencesActivity()))
+    );
     private final AbstractConfigCell dividerFolder = cellGroup.appendCell(new ConfigCellDivider());
     private final AbstractConfigCell headerBlurOptions = cellGroup.appendCell(new ConfigCellHeader(getString(R.string.BlurOptions)));
     private final AbstractConfigCell forceBlurInChatRow = cellGroup.appendCell(new ConfigCellTextCheck(NekoConfig.forceBlurInChat));
-    private final AbstractConfigCell headerChatBlur = cellGroup.appendCell(new ConfigCellHeader(getString(R.string.ChatBlurAlphaValue)));
-    private final AbstractConfigCell chatBlurAlphaValueRow = cellGroup.appendCell(new ConfigCellCustom("ChatBlurAlphaValue", ConfigCellCustom.CUSTOM_ITEM_CharBlurAlpha, NekoConfig.forceBlurInChat.Bool()));
 
     @Override
     protected RecyclerListView.SelectionAdapter getListAdapter() {
@@ -245,8 +239,8 @@ public class NekoAppearanceSettingsActivity extends BaseNekoXSettingsActivity {
         cellGroup.rows.remove(tabsTitleTypeRow);
         int hideAllTabIdx = cellGroup.rows.indexOf(hideAllTabRow);
         if (hideAllTabIdx >= 0) {
-            cellGroup.rows.add(hideAllTabIdx, tabsTitleTypeRow);
             cellGroup.rows.add(hideAllTabIdx, ignoreUnreadCountRow);
+            cellGroup.rows.add(hideAllTabIdx, tabsTitleTypeRow);
         }
         wasCentered = isCentered();
         wasCenteredAtBeginning = wasCentered;
@@ -337,12 +331,7 @@ public class NekoAppearanceSettingsActivity extends BaseNekoXSettingsActivity {
                     listView.invalidateItemDecorations();
                 }
                 reloadUI(0);
-            } else if (key.equals(NekoConfig.forceBlurInChat.getKey())) {
-                boolean enabled = (Boolean) newValue;
-                if (chatBlurAlphaSeekbar != null) {
-                    chatBlurAlphaSeekbar.setEnabled(enabled);
-                }
-                ((ConfigCellCustom) chatBlurAlphaValueRow).setEnabled(enabled);
+
             } else if (key.equals(NaConfig.INSTANCE.getSwitchStyle().getKey()) || key.equals(NaConfig.INSTANCE.getSliderStyle().getKey())) {
                 if (listView.getLayoutManager() != null) {
                     recyclerViewState = listView.getLayoutManager().onSaveInstanceState();
@@ -526,69 +515,8 @@ public class NekoAppearanceSettingsActivity extends BaseNekoXSettingsActivity {
                 );
                 case ConfigCellCustom.CUSTOM_ITEM_ChatListPreview -> chatListPreviewCell = new ChatListPreviewCell(mContext);
                 case ConfigCellCustom.CUSTOM_ITEM_FilterTabsPreview -> filterTabsPreviewCell = new FilterTabsPreviewCell(mContext);
-                case ConfigCellCustom.CUSTOM_ITEM_CharBlurAlpha -> {
-                    chatBlurAlphaSeekbar = new ChatBlurAlphaSeekBar(mContext);
-                    chatBlurAlphaSeekbar.setEnabled(NekoConfig.forceBlurInChat.Bool());
-                    yield chatBlurAlphaSeekbar;
-                }
                 default -> null;
             };
-        }
-    }
-
-    private static class ChatBlurAlphaSeekBar extends FrameLayout {
-
-        private final SeekBarView sizeBar;
-        private final android.text.TextPaint textPaint;
-        private boolean enabled = true;
-
-        @SuppressLint("ClickableViewAccessibility")
-        public ChatBlurAlphaSeekBar(Context context) {
-            super(context);
-
-            setWillNotDraw(false);
-            setClickable(true);
-
-            textPaint = new android.text.TextPaint(Paint.ANTI_ALIAS_FLAG);
-            textPaint.setTextSize(dp(16));
-
-            sizeBar = new SeekBarView(context);
-            sizeBar.setReportChanges(true);
-            sizeBar.setSeparatorsCount(256);
-            sizeBar.setDelegate((stop, progress) -> {
-                NekoConfig.chatBlueAlphaValue.setConfigInt(Math.min(255, (int) (255 * progress)));
-                invalidate();
-            });
-            sizeBar.setOnTouchListener((v, event) -> !enabled);
-            sizeBar.setProgress(NekoConfig.chatBlueAlphaValue.Int());
-            addView(sizeBar, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 38, Gravity.LEFT | Gravity.TOP, 9, 5, 43, 11));
-        }
-
-        @Override
-        protected void onDraw(Canvas canvas) {
-            textPaint.setColor(Theme.getColor(Theme.key_windowBackgroundWhiteValueText));
-            canvas.drawText(String.valueOf(NekoConfig.chatBlueAlphaValue.Int()), getMeasuredWidth() - dp(39), dp(28), textPaint);
-        }
-
-        @Override
-        protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-            sizeBar.setProgress((NekoConfig.chatBlueAlphaValue.Int() / 255.0f));
-        }
-
-        @Override
-        public void invalidate() {
-            super.invalidate();
-            sizeBar.invalidate();
-        }
-
-        @Override
-        public void setEnabled(boolean enabled) {
-            super.setEnabled(enabled);
-            this.enabled = enabled;
-            sizeBar.setAlpha(enabled ? 1.0f : 0.5f);
-            textPaint.setAlpha((int) ((enabled ? 1.0f : 0.3f) * 255));
-            invalidate();
         }
     }
 }

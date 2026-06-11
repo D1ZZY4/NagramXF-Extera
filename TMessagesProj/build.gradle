@@ -10,7 +10,7 @@ plugins {
 def buildTimestamp = System.getenv('BUILD_TIMESTAMP') ?: '0'
 def commitId = System.getenv('COMMIT_ID')
 def verName = "${APP_VERSION_NAME}${commitId?.take(7) ? "-${commitId.take(7)}" : ''}"
-def verCode = 1244
+def verCode = 1245
 
 def officialVer = APP_VERSION_NAME
 def officialCode = APP_VERSION_CODE
@@ -242,7 +242,7 @@ dependencies {
     // kotlin
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2'
     // utilities
-    implementation 'org.osmdroid:osmdroid-android:6.1.20'
+    implementation 'org.maplibre.gl:android-sdk:13.1.0'
     // network
     implementation 'com.squareup.okhttp3:okhttp:5.3.2'
     implementation 'dnsjava:dnsjava:3.6.4'
@@ -257,6 +257,12 @@ dependencies {
     implementation 'org.apache.commons:commons-text:1.15.0'
     // translator from nekogram
     implementation 'app.nekogram.translator:translator:1.5.5'
+    // markwon for MarkdownParser
+    implementation "io.noties.markwon:core:4.6.2"
+    implementation "io.noties.markwon:ext-strikethrough:4.6.2"
+    implementation "io.noties.markwon:ext-tables:4.6.2"
+    implementation "io.noties.markwon:html:4.6.2"
+    implementation "io.noties.markwon:inline-parser:4.6.2"
 
     compileOnly fileTree('libs')
 }

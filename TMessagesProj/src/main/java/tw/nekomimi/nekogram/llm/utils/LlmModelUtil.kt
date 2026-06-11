@@ -20,21 +20,30 @@ object LlmModelUtil {
     }
 
     @JvmStatic
-    fun isCerebrasGlm(url: String?, model: String?): Boolean {
+    fun isGemma4(model: String?): Boolean {
         val base = getBaseModelName(model).lowercase()
-        return url == LlmPresetRegistry.getPresetBaseUrl(LlmPresetRegistry.CEREBRAS) && base == "zai-glm-4.7"
+        return base.contains("gemma4") || base.contains("gemma-4")
+    }
+
+    fun isGemini3(model: String?): Boolean {
+        return getBaseModelName(model).lowercase().startsWith("gemini-3")
     }
 
     @JvmStatic
     fun isDeepSeekV4(model: String?): Boolean {
-        val base = getBaseModelName(model).lowercase()
-        return base.startsWith("deepseek-v4")
+        return getBaseModelName(model).lowercase().startsWith("deepseek-v4")
+    }
+
+    fun isReasoning(model: String?): Boolean {
+        return isOpenaiCompatibleReasoning(model) || isGemma4(model) || isDeepSeekV4(model)
     }
 
     @JvmStatic
-    fun isReasoning(model: String?): Boolean {
+    fun isOpenaiCompatibleReasoning(model: String?): Boolean {
         val base = getBaseModelName(model).lowercase()
         return base.contains("gemini") && base.contains("flash")
+                || base.startsWith("nemotron-3")
+                || base.startsWith("grok-4.3")
                 || base.startsWith("gpt-oss")
                 || (base.startsWith("gpt-5") && !base.contains("instant") && !base.contains("chat"))
     }
@@ -46,29 +55,107 @@ object LlmModelUtil {
             base.startsWith("gpt-oss") -> "low"
             base.startsWith("gpt-5.") -> "none"
             base.startsWith("gpt-5") -> "minimal"
+            isGemma4(model) -> "minimal"
             else -> "none"
         }
     }
 
     @JvmStatic
     fun applyReasoningParameters(requestJson: JSONObject, url: String?, model: String?) {
-        if (isReasoning(model)) {
-            requestJson.put("reasoning_effort", getReasoningEffort(model))
-        } else if (isCerebrasGlm(url, model)) {
-            requestJson.put("disable_reasoning", true)
-        } else if (isDeepSeekV4(model)) {
-            if (url == LlmPresetRegistry.getPresetBaseUrl(LlmPresetRegistry.VERCEL_AI_GATEWAY)) {
-                requestJson.put(
-                    "providerOptions",
-                    JSONObject().put(
-                        "deepseek",
-                        JSONObject().put("thinking", JSONObject().put("type", "disabled"))
-                    )
-                )
-            } else {
-                requestJson.put("thinking", JSONObject().put("type", "disabled"))
-            }
+        if (!isReasoning(model)) {
+            return
         }
+        val providerPreset = when (url) {
+            LlmPresetRegistry.getPresetBaseUrl(LlmPresetRegistry.GEMINI) -> LlmPresetRegistry.GEMINI
+            LlmPresetRegistry.getPresetBaseUrl(LlmPresetRegistry.OPENROUTER) -> LlmPresetRegistry.OPENROUTER
+            LlmPresetRegistry.getPresetBaseUrl(LlmPresetRegistry.VERCEL_AI_GATEWAY) -> LlmPresetRegistry.VERCEL_AI_GATEWAY
+            else -> null
+        }
+        if (isGemma4(model) && providerPreset != LlmPresetRegistry.GEMINI) {
+            return
+        }
+        applyReasoningParametersInternal(requestJson, providerPreset, model)
+    }
+
+    private fun applyReasoningParametersInternal(requestJson: JSONObject, providerPreset: Int?, model: String?) {
+        if (providerPreset != null && applyReasoningParametersRouter(requestJson, providerPreset, model)) {
+            return
+        }
+        applyReasoningParametersOriginal(requestJson, model)
+    }
+
+    private fun applyReasoningParametersOriginal(requestJson: JSONObject, model: String?) {
+        if (isOpenaiCompatibleReasoning(model) || isGemma4(model)) {
+            requestJson.put("reasoning_effort", getReasoningEffort(model))
+        } else if (isDeepSeekV4(model)) {
+            requestJson.put("thinking", JSONObject().put("type", "disabled"))
+        }
+    }
+
+    private fun applyReasoningParametersRouter(requestJson: JSONObject, providerPreset: Int, model: String?): Boolean {
+        val routerProvider = getRouterModelProvider(model) ?: return false
+        return when (providerPreset) {
+            LlmPresetRegistry.OPENROUTER -> {
+                when (routerProvider) {
+                    "openai" -> {
+                        if (model?.contains("gpt-oss") ?: return false) {
+                            requestJson.put("reasoning", JSONObject().put("effort", "minimal"))
+                            return true
+                        }
+                    }
+                }
+                requestJson.put("reasoning", JSONObject().put("effort", "none"))
+                true
+            }
+            LlmPresetRegistry.VERCEL_AI_GATEWAY -> {
+                when (routerProvider) {
+                    "google" -> {
+                        val thinkingConfig = if (isGemini3(model)) {
+                            JSONObject().put("thinkingLevel", "minimal")
+                        } else {
+                            JSONObject().put("thinkingBudget", 0)
+                        }
+                        putProviderOptions(
+                            requestJson,
+                            "google",
+                            JSONObject().put("thinkingConfig", thinkingConfig)
+                        )
+                        return true
+                    }
+                    "deepseek" -> {
+                        if (isDeepSeekV4(model)) {
+                            putProviderOptions(
+                                requestJson,
+                                "deepseek",
+                                JSONObject().put("thinking", JSONObject().put("type", "disabled"))
+                            )
+                            return true
+                        }
+                    }
+                }
+                putProviderOptions(
+                    requestJson,
+                    routerProvider,
+                    JSONObject().put("reasoning", JSONObject().put("effort", "none"))
+                )
+                true
+            }
+            else -> false
+        }
+    }
+
+    private fun getRouterModelProvider(model: String?): String? {
+        if (model.isNullOrBlank() || !model.contains('/')) {
+            return null
+        }
+        return model.trim().substringBefore('/').lowercase()
+    }
+
+    private fun putProviderOptions(requestJson: JSONObject, provider: String, options: JSONObject) {
+        val providerOptions = requestJson.optJSONObject("providerOptions") ?: JSONObject().also {
+            requestJson.put("providerOptions", it)
+        }
+        providerOptions.put(provider, options)
     }
 
     @JvmStatic

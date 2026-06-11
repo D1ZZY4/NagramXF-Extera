@@ -89,7 +89,7 @@ public class NekoConfig {
     public static ConfigItem nameOrder = addConfig("NameOrder", configTypeInt, 1);
     public static ConfigItem mapPreviewProvider = addConfig("MapPreviewProvider", configTypeInt, 0);
     public static ConfigItem forceBlurInChat = addConfig("forceBlurInChat", configTypeBool, false);
-    public static ConfigItem chatBlueAlphaValue = addConfig("forceBlurInChatAlphaValue", configTypeInt, 127);
+    public static ConfigItem chatBlueAlphaValue = addConfig("forceBlurInChatAlphaValue", configTypeInt, 200);
     public static ConfigItem hideProxySponsorChannel = addConfig("HideProxySponsorChannel", configTypeBool, false);
     public static ConfigItem showAddToSavedMessages = addConfig("showAddToSavedMessages", configTypeBool, true);
     public static ConfigItem showReport = addConfig("showReport", configTypeBool, false);
@@ -149,6 +149,7 @@ public class NekoConfig {
 
     public static ConfigItem ignoreContentRestrictions = addConfig("ignoreContentRestrictions", configTypeBool, true);
     public static ConfigItem useChatAttachMediaMenu = addConfig("UseChatAttachEnterMenu", configTypeBool, true);
+    public static ConfigItem moveAttachCameraToBottom = addConfig("MoveAttachCameraToBottom", configTypeBool, true);
     public static ConfigItem disableLinkPreviewByDefault = addConfig("DisableLinkPreviewByDefault", configTypeBool, false);
     public static ConfigItem sendCommentAfterForward = addConfig("SendCommentAfterForward", configTypeBool, true);
     public static ConfigItem disableTrending = addConfig("DisableTrending", configTypeBool, true);
@@ -170,8 +171,7 @@ public class NekoConfig {
     public static ConfigItem customAudioBitrate = addConfig("customAudioBitrate", configTypeInt, 32);
     public static ConfigItem enhancedFileLoader = addConfig("enhancedFileLoader", configTypeBool, false);
     public static ConfigItem uploadBoost = addConfig("uploadBoost", configTypeBool, false);
-    public static ConfigItem useOSMDroidMap = addConfig("useOSMDroidMap", configTypeBool, false);
-    public static ConfigItem mapDriftingFixForGoogleMaps = addConfig("mapDriftingFixForGoogleMaps", configTypeBool, true);
+    public static ConfigItem useOpenFreeMap = addConfig("useOpenFreeMap", configTypeBool, true);
 
     public static ConfigItem localPremium = addConfig("localPremium", configTypeBool, false);
 
@@ -290,10 +290,6 @@ public class NekoConfig {
         public DatacenterInfo(int i) {
             id = i;
         }
-    }
-
-    public static boolean fixDriftingForGoogleMaps() {
-        return !useOSMDroidMap.Bool() && mapDriftingFixForGoogleMaps.Bool();
     }
 
     // --- Ghost Mode ---

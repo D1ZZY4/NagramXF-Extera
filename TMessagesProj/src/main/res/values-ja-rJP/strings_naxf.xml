@@ -1,5 +1,38 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Pillstack -->
+    <string name="PillStackPills">カプセルスタック</string>
+    <string name="PillStackPillsInfo">検索フィールドにインタラクティブカプセルを表示</string>
+    <string name="PillStackActivePills">有効なカプセル</string>
+    <string name="PillStackHiddenPills">非表示のカプセル</string>
+    <string name="PillStackPillsSettingsInfo">タップで表示切替。長押しドラッグで並び替え。</string>
+    <string name="PillStackInfiniteScrolling">無限スクロール</string>
+    <string name="WeatherPill">天気</string>
+    <string name="WeatherPillTopInfo">検索バーの横に天気カプセルを表示し、現在地の気温と天気を表示します。</string>
+    <string name="WeatherLocation">位置情報</string>
+    <string name="WeatherSettingsInfo">ダイアログリストを開くと天気が更新されます。カプセルをタップでクイック操作。</string>
+    <string name="WeatherLocationPermissionGrant">位置情報の権限を許可</string>
+    <string name="WeatherLocationPermissionNo">現在地の天気を取得するには位置情報へのアクセスを許可してください。</string>
+    <string name="WeatherLocationServicesEnable">位置情報サービスを有効にする</string>
+    <string name="CurrentLocation">現在地</string>
+    <string name="SelectLocation">位置を選択</string>
+    <string name="CryptoPillTargetCurrency">表示通貨</string>
+    <string name="CryptoCurrencyUsd">米ドル</string>
+    <string name="CryptoCurrencyEur">ユーロ</string>
+    <string name="CryptoCurrencyRub">ロシア・ルーブル</string>
+    <string name="CryptoCurrencyGbp">英ポンド</string>
+    <string name="CryptoCurrencyKzt">カザフスタン・テンゲ</string>
+    <string name="CryptoCurrencyTry">トルコ・リラ</string>
+    <string name="CryptoCurrencyUah">ウクライナ・フリヴニャ</string>
+    <string name="CryptoCurrencyPln">ポーランド・ズウォティ</string>
+    <string name="CryptoCurrencyAed">UAE ディルハム</string>
+    <string name="CryptoCurrencyCny">中国元</string>
+    <string name="CryptoCurrencyJpy">日本円</string>
+    <string name="CryptoCurrencyByn">ベラルーシ・ルーブル</string>
+    <string name="CryptoCurrencyIls">イスラエル・新シェケル</string>
+    <string name="CryptoCurrencyCzk">チェコ・コルナ</string>
+    <string name="CryptoCurrencyInr">インド・ルピー</string>
+
     <string name="SquareFloatingButton">四角いフローティングボタン</string>
     <string name="SeparateHeaders">セクションヘッダーを分離</string>
     <string name="PushServiceTypeUnifiedGateway">Unified Push ゲートウェイ</string>
@@ -44,6 +77,7 @@
     <string name="MessageSavingSaveMedia">添付ファイルを保存</string>
     <string name="MessageSavingSaveMediaHint">チャットと上限を設定</string>
     <string name="NagramXForkChannel">Nagram XF チャンネル</string>
+    <string name="AyuMomentsPreviewMessage">人事を尽くして天命を待つ</string>
     <string name="DeletedMarkText">削除済みマーク</string>
     <string name="DeletedMarkNothing">なし</string>
     <string name="DeletedMarkTrashBin">ごみ箱</string>
@@ -187,4 +221,76 @@
     <string name="VideoMessagesCameraFront">前面</string>
     <string name="VideoMessagesCameraRear">メイン</string>
     <string name="VideoMessagesCameraAsk">尋ねる</string>
+
+    <!-- AI Chat -->
+    <string name="AIChat">AI チャット</string>
+    <string name="AIChatInfo">サービス、ロール、履歴を設定</string>
+    <string name="AIChatServices">サービス</string>
+    <string name="AIChatRoles">ロール</string>
+    <string name="AIChatMessageHistory">メッセージ履歴</string>
+    <string name="AIChatHistoryInfo">有効にすると、AI は会話の以前のメッセージを記憶します。</string>
+    <string name="AIChatOther">その他</string>
+    <string name="AIChatResponseStreaming">ストリーミング応答</string>
+    <string name="AIChatResponseStreamingInfo">AI の応答を生成しながらリアルタイムで表示します。</string>
+    <string name="AIChatShowResponseOnly">応答のみ表示</string>
+    <string name="AIChatInsertAsQuote">応答を引用として挿入</string>
+    <string name="AIChatNotConfigured">未設定</string>
+    <string name="AIChatAddService">サービスを追加</string>
+    <string name="AIChatAddServiceHint">タップして新しい AI サービスエンドポイントを追加</string>
+    <string name="AIChatSendPopupHint">タップして**API キーを追加**し、AI機能を開始してください。</string>
+    <string name="AIChatServicesInfo">AI サービスエンドポイントを追加します。タップでデフォルトに設定、長押しで編集・削除。</string>
+    <string name="AIChatNewService">新規サービス</string>
+    <string name="AIChatEditService">サービスを編集</string>
+    <string name="AIChatServiceURL">サービス URL</string>
+    <string name="AIChatServiceModel">モデル</string>
+    <string name="AIChatServiceKey">API キー</string>
+    <string name="AIChatProtocol">プロトコル</string>
+    <string name="AIChatProvider">プロバイダー</string>
+    <string name="AIChatCustomProviderInfo">独自の OpenAI 互換エンドポイントを入力</string>
+    <string name="AIChatFetchModels">モデル一覧を取得</string>
+    <string name="AIChatTestConnection">接続テスト</string>
+    <string name="AIChatTestSuccess">接続成功</string>
+    <string name="AIChatAddRole">ロールを追加</string>
+    <string name="AIChatAddRoleHint">タップしてカスタムロールを追加</string>
+    <string name="AIChatRolesInfo">ロールは AI の性格と動作を定義します。</string>
+    <string name="AIChatSuggestedRoles">おすすめ</string>
+    <string name="AIChatCustomRoles">カスタム</string>
+    <string name="AIChatNewRole">新規ロール</string>
+    <string name="AIChatEditRole">ロールを編集</string>
+    <string name="AIChatRoleName">名前</string>
+    <string name="AIChatRolePrompt">システムプロンプト</string>
+    <string name="AIChatPromptHint">プロンプト</string>
+    <string name="AIChatProceed">続ける</string>
+    <string name="AIChatGenerate">生成</string>
+    <string name="AIChatGenerateFromMessage">メッセージから生成</string>
+    <string name="AIChatSelected">選択中</string>
+    <string name="ClearConversationHistoryInfo">AI の会話履歴を消去してもよろしいですか？</string>
+    <string name="AIChatHistoryCleared">履歴を消去しました</string>
+
+    <!-- AI Error messages -->
+    <string name="AIError">サーバーエラー</string>
+    <string name="AIErrorInfo">予期しないエラーが発生しました。もう一度お試しください。</string>
+    <string name="AIError400">不正なリクエスト</string>
+    <string name="AIError400Info">リクエスト形式が不正です。プロンプトを確認してください。</string>
+    <string name="AIError401">認証エラー</string>
+    <string name="AIError401Info">API キーが無効です。サービス設定を確認してください。</string>
+    <string name="AIError402">支払いが必要</string>
+    <string name="AIError402Info">API クォータを使い切りました。</string>
+    <string name="AIError403">アクセス禁止</string>
+    <string name="AIError403Info">アクセスが拒否されました。API 権限を確認してください。</string>
+    <string name="AIError408">タイムアウト</string>
+    <string name="AIError408Info">リクエストがタイムアウトしました。後で再試行してください。</string>
+    <string name="AIError429">レート制限</string>
+    <string name="AIError429Info">リクエストが多すぎます。しばらくお待ちください。</string>
+    <string name="AIError502">不正なゲートウェイ</string>
+    <string name="AIError502Info">サーバーが一時的に利用できません。</string>
+    <string name="AIError503">サービス利用不可</string>
+    <string name="AIError503Info">サービスが過負荷です。後で再試行してください。</string>
+    <string name="HideAiEditor">AIエディタを非表示</string>
+    <string name="HideAiSummary">AI要約を非表示</string>
+    <string name="AiHideHeader">AI機能を非表示</string>
+
+    <!-- 添付カメラ -->
+    <string name="MoveAttachCameraToBottom">下部カメラショートカット</string>
+    <string name="MoveAttachCameraToBottomNotice">ギャラリーグリッドの代わりに、下部の添付バーにカメラを表示します。</string>
 </resources>
