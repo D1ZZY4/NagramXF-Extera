@@ -11,8 +11,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.browser.Browser;
-import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.TextSettingsCell;
+
+import tw.nekomimi.nekogram.ui.cells.HeaderCell;
 
 public class NagramExteraAboutActivity extends BaseNekoSettingsActivity {
 
