@@ -15,3 +15,7 @@ TMessagesProj/jniRes/
 TMessagesProj/afat/
 attached_assets/
 *replit*
+
+# AI tooling (must never land on main)
+.agents/
+CLAUDE.md
